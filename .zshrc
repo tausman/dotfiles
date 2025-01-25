@@ -135,12 +135,12 @@ then
     bindkey -M viins "^[OA" history-beginning-search-backward-end
     bindkey -M viins "^[OB" history-beginning-search-forward-end
     # This is needed for Ghostty bc of preexisting mappings
-    # also helpful for new keyboard
-    bindkey -M viins '^]' vi-cmd-mode
+    # also helpful for new keyboard -- COMMENTED OUT BC USED BELOW
+    # bindkey -M viins '^]' vi-cmd-mode
     # Remap ctrl-c to escape
     bindkey -M viins '^C' vi-cmd-mode
     # Make a new interrupt command since ctrl-c is gone
-    stty intr ^d
+    stty intr ^]
     # Trying new crtl+p/n keymappings to match vim
     bindkey -M vicmd "^p" history-beginning-search-backward-end
     bindkey -M vicmd "^n" history-beginning-search-forward-end
