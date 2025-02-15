@@ -151,6 +151,9 @@ fi
 # Use neovim as the default man pager
 export MANPAGER="nvim +Man!"
 
+# Add full filepath to commandline prompt
+PROMPT=$(echo $PROMPT | sed 's/%c%/%~%/')
+
 # BEGIN ANSIBLE MANAGED BLOCK
 # Load homebrew shell variables
 eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -206,6 +209,3 @@ export GOPROXY=binaries.ddbuild.io,https://proxy.golang.org,direct
 export GONOSUMDB=github.com/DataDog,go.ddbuild.io
 # END ANSIBLE MANAGED BLOCK
 export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
-
-# Add full filepath to commandline prompt
-PROMPT=$(echo $PROMPT | sed 's/%c%/%~%/')
