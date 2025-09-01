@@ -85,7 +85,7 @@ source $ZSH/oh-my-zsh.sh
 # if [[ -n $SSH_CONNECTION ]]; then
 #   export EDITOR='vim'
 # else
-#   export EDITOR='mvim'
+#   export EDITOR='nvim'
 # fi
 
 # Compilation flags
@@ -209,3 +209,9 @@ export GOPROXY=binaries.ddbuild.io,https://proxy.golang.org,direct
 export GONOSUMDB=github.com/DataDog,go.ddbuild.io
 # END ANSIBLE MANAGED BLOCK
 export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
+export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
+export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
+export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
+
+. "$HOME/.local/bin/env"
+export GPG_TTY=$(tty)
