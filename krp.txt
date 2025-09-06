@@ -1,0 +1,2 @@
+krp --delay-until-repeat 10
+krp --repeat-rate 1
