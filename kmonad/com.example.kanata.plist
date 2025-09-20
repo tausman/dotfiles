@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.kanata</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/tausif.rahman/.local/bin/kmonad</string>
+        <string>/Users/tausif.rahman/.config/kmonad.kbd</string>
+        <!-- <string>/opt/homebrew/bin/kanata</string> -->
+        <!-- <string>-c</string> -->
+        <!-- <string>/Users/tausif.rahman/.config/kanata.kbd</string> -->
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/kmonad.out.log</string>
+    <!-- <string>/tmp/kanata.out.log</string> -->
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/kmonad.err.log</string>
+    <!-- <string>/tmp/kanata.err.log</string> -->
+</dict>
+</plist>
