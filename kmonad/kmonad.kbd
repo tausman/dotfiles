@@ -16,22 +16,33 @@
   fn   lctl lalt lmet           spc            rmet ralt left down rght
 )
 
+;; (defalias fn (around (layer-toggle function) fn))
+
 (deflayer qwerty
-  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  esc  brdn brup lp   mctl bldn blup prev pp   next mute vold volu
   @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   esc  a    s    d    f    g    h    j    k    l    ;    '    ret
   lsft z    x    c    v    b    n    m    ,    .    /    rsft up
-  fn   lalt lmet lctl           spc            ralt rmet left down rght
+  @fn  lalt lmet lctl           spc            ralt rmet left down rght
+)
+
+(deflayer function
+  _    f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _              _              _    _    _    _    _
 )
 
 (deflayer homemod
-  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  esc  brdn brup lp   mctl bldn blup prev pp   next mute vold volu
   @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
   lsft z    x    c    v    b    n    m    ,    .    /    rsft up
-  fn   lalt lmet lsft           spc            @spe ralt left down rght
+  @fn  lalt lmet @spe           spc            @spe ralt left down rght
 )
 
 (deflayer numbers
@@ -62,15 +73,16 @@
 )
 
 (defalias
+  fn (around (layer-toggle function) fn)
   ;; Home row mods with tap-hold
-  a   (tap-hold-next-release 150 a lmet)
-  s   (tap-hold-next-release 150 s lalt)
-  d   (tap-hold-next-release 150 d lsft)
-  f   (tap-hold-next-release 150 f lctl)
-  j   (tap-hold-next-release 150 j rctl)
-  k   (tap-hold-next-release 150 k rsft)
-  l   (tap-hold-next-release 150 l ralt)
-  ;   (tap-hold-next-release 150 ; rmet)
+  a   (tap-hold 200 a lmet)
+  s   (tap-hold 200 s lalt)
+  d   (tap-hold 200 d lsft)
+  f   (tap-hold 200 f lctl)
+  j   (tap-hold 200 j rctl)
+  k   (tap-hold 200 k rsft)
+  l   (tap-hold 200 l ralt)
+  ;   (tap-hold 200 ; rmet)
 
   ;; Space with layer toggles
   num (tap-hold-next-release 150 spc (layer-toggle numbers))
