@@ -1,0 +1,35 @@
+# Tausif Personal Dark Config
+
+# Default colors
+[colors.primary]
+background = '#121212'
+# foreground = '#c7c7c7'
+
+# Cursor colors
+# [colors.cursor]
+# text = '#feffff'
+# cursor = '#c7c7c7'
+
+# Normal colors
+[colors.normal]
+black = '#121212'
+# black = '#000000'
+# red = '#b83019'
+# green = '#51bf37'
+# yellow = '#c6c43d'
+# blue = '#0c24bf'
+# magenta = '#b93ec1'
+# cyan = '#53c2c5'
+# white = '#c7c7c7'
+
+# Bright colors
+[colors.bright]
+black = '#121212'
+# black = '#676767'
+# red = '#ef766d'
+# green = '#8cf67a'
+# yellow = '#fefb7e'
+# blue = '#6a71f6'
+# magenta = '#f07ef8'
+# cyan = '#8ef9fd'
+# white = '#feffff'
