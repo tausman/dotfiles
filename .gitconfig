@@ -1,0 +1,42 @@
+[core]
+	hooksPath = /usr/local/dd/global_hooks
+	excludesfile = ~/.gitignore
+	untrackedCache = true
+	fsmonitor = true
+	editor = nvim
+[user]
+	email = tausif.rahman@datadoghq.com
+	name = Tausif Rahman
+[push]
+	autoSetupRemote = true
+[diff]
+	tool = nvimdiff
+	mnemonicPrefix = true
+[difftool "vscode"]
+    	cmd = code --wait --diff $LOCAL $REMOTE
+[difftool]
+	prompt = false
+[safe]
+	directory = /Users/tausif.rahman/go/src/github.com/DataDog/dd-source/.git
+	directory = *
+	directory = *
+	directory = *
+	directory = *
+	directory = *
+	directory = *
+	directory = *
+	directory = *
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+	insteadOf = git://github.com/
+[commit]
+	gpgsign = true
+[status]
+	showUntrackedFiles = all
+[feature]
+	manyFiles = true
+[maintenance]
+	repo = /Users/tausif.rahman/go/src/github.com/DataDog/dd-source
+	repo = /Users/tausif.rahman/worktrees/dd-source/cred-1832-use-orstore-prod
+[index]
+	skipHash = true
