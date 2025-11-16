@@ -41,15 +41,37 @@
   @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
-  lsft z    x    c    v    b    n    m    ,    .    /    rsft up
-  @fn  lalt lmet @spe           spc            @spe ralt left down rght
+  @spe z    x    c    v    b    n    m    ,    .    /    rsft up
+  @fn  lalt lmet @spe           spc            @pun ralt left down rght
 )
 
-(deflayer numbers
+;; This allows me to use C-n && C-p for up && down _everywhere_
+;; Benefit is I can use this for navigating in vim w/ repeats (not possible w/o)
+;; I can also use this for easy up/down navigation outside of vim (ie: browser)
+;; [The `around-implicit` is used for all of the `C-*` mappings so other modifiers (ie: Shift) will work]
+(deflayer fmod
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  @grl C-1  C-2  C-3  C-4  C-5  C-6  C-7  C-8  C-9  C-0  C--  C-=  C-bspc
+  C-tab C-q  C-w  C-e  C-r  C-t  C-y  C-u  C-i  C-o  up   C-[  C-]  C-\
+  _     @fa  @fs  @fd  _    C-g  C-h  @fj  @fk  @fl  @f;  C-'  C-ret
+  @spe C-z  C-x  C-c  C-v  C-b  down C-m  C-,  C-.  C-/  rsft _
+  @fn  lalt lmet @spe           C-spc          @pun ralt left down rght
+)
+
+(deflayer jmod
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  @grl C-1  C-2  C-3  C-4  C-5  C-6  C-7  C-8  C-9  C-0  C--  C-=  C-bspc
+  C-tab C-q  C-w  C-e  C-r  C-t  C-y  C-u  C-i  C-o  up   C-[  C-]  C-\
+  _     @ja  @js  C-d  C-f  C-g  C-h  _    @jk  @jl  @j;  C-'  C-ret
+  @spe C-z  C-x  C-c  C-v  C-b  down C-m  C-,  C-.  C-/  rsft _
+  @fn  lalt lmet @spe           C-spc          @pun ralt left down rght
+)
+
+(deflayer punctuation
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    1    2    3    4    5    6    7    8    9    0    _    _    _
-  _    _    _    _    _    _    left down up   rght _    _    _
+  ~    !    @    #    $    %    ^    &    *    (    )    _    +    bspc
+  _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _              _              _    _    _    _    _
 )
@@ -57,7 +79,7 @@
 (deflayer special
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    S-1  S-2  S-3  S-4  S-5  S-6  S-7  S-8  S-9  S-0  _    _    _
+  `    1    2    3    4    5    6    7    8    9    0    -    =    bspc
   _    _    _    _    _    _    left down up   rght _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _              _              _    _    _    _    _
@@ -78,15 +100,31 @@
   a   (tap-hold 200 a lmet)
   s   (tap-hold 200 s lalt)
   d   (tap-hold 200 d lsft)
-  f   (tap-hold 200 f lctl)
-  j   (tap-hold 200 j rctl)
+  f   (tap-hold 200 f (layer-toggle fmod))
+  j   (tap-hold 200 j (layer-toggle jmod))
   k   (tap-hold 200 k rsft)
   l   (tap-hold 200 l ralt)
   ;   (tap-hold 200 ; rmet)
 
+  ;; Home row mods with ctrl for fmod layer
+  fa  (tap-hold 200 C-a (around lctl lmet))
+  fs  (tap-hold 200 C-s (around lctl lalt))
+  fd  (tap-hold 200 C-d (around lctl lsft))
+  fj  (tap-hold 200 C-j (around lctl rctl))
+  fk  (tap-hold 200 C-k (around lctl rsft))
+  fl  (tap-hold 200 C-l (around lctl ralt))
+  f;  (tap-hold 200 C-; (around lctl rmet))
+
+  ;; Home row mods with ctrl for jmod layer
+  ja  (tap-hold 200 C-a (around lctl lmet))
+  js  (tap-hold 200 C-s (around lctl lalt))
+  jk  (tap-hold 200 C-k (around lctl rsft))
+  jl  (tap-hold 200 C-l (around lctl ralt))
+  j;  (tap-hold 200 C-; (around lctl rmet))
+
   ;; Space with layer toggles
-  num (tap-hold-next-release 150 spc (layer-toggle numbers))
-  spe (tap-hold-next-release 150 spc (layer-toggle special))
+  pun (tap-hold-next-release 200 ret (layer-toggle punctuation))
+  spe (tap-hold-next-release 200 bspc (layer-toggle special))
 
   ;; Grave with layer toggle
   grl (tap-hold-next-release 200 grv (layer-toggle layers))
