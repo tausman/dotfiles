@@ -16,7 +16,7 @@ end
 vim.api.nvim_create_user_command('ColorScheme', function(opts)
     local schemes = {
         "rose-pine",
-        "gruvbox", 
+        "gruvbox",
         "tokyonight",
         "github_light_high_contrast",
         "github_dark_high_contrast",
@@ -24,7 +24,7 @@ vim.api.nvim_create_user_command('ColorScheme', function(opts)
         "alabaster",
         "brightburn"
     }
-    
+
     if opts.args == "" then
         print("Available colorschemes: " .. table.concat(schemes, ", "))
     else
@@ -33,7 +33,8 @@ vim.api.nvim_create_user_command('ColorScheme', function(opts)
 end, {
     nargs = '?',
     complete = function()
-        return {"rose-pine", "gruvbox", "tokyonight", "github_light_high_contrast", "github_dark_high_contrast", "kanagawa", "alabaster", "brightburn"}
+        return { "rose-pine", "gruvbox", "tokyonight", "github_light_high_contrast", "github_dark_high_contrast",
+            "kanagawa", "alabaster", "brightburn" }
     end
 })
 
@@ -122,8 +123,8 @@ return {
                     italic = false,
                 },
             })
-            ColorMyPencils('github_light_high_contrast')
-            -- ColorMyPencils('github_dark_high_contrast')
+            -- ColorMyPencils('github_light_high_contrast')
+            ColorMyPencils('github_dark_high_contrast')
         end
     },
     {
