@@ -40,9 +40,18 @@
   esc  brdn brup lp   mctl bldn blup prev pp   next mute vold volu
   @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
-  esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
+  esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    @pun
   @spe z    x    c    v    b    n    m    ,    .    /    rsft up
   @fn  lalt lmet @spe           spc            @pun ralt left down rght
+)
+
+(deflayer newmod
+  esc  brdn brup lp   mctl bldn blup prev pp   next mute vold volu
+  @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    @pun
+  @spe z    x    c    v    b    n    m    ,    .    /    rsft up
+  @fn  lalt lmet @num           spc            @nav ralt left down rght
 )
 
 ;; This allows me to use C-n && C-p for up && down _everywhere_
@@ -70,24 +79,42 @@
 (deflayer punctuation
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  ~    !    @    #    $    %    ^    &    *    (    )    _    +    bspc
-  _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    _    _    _              _              _    _    _    _    _
+  S-=  S-1  S-2  S-3  S-4  S-5  S-6  S-7  S-8  S-9  S-0  S--  _    bspc
+  _    _    _    _    _    _    left down up   rght _    _    _
+  _    S-`  _    _    _    _    _    _    _    S-[  S-]  _    _
+  _    _    _    bspc           _              _    _    _    _    _
 )
 
 (deflayer special
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  `    1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  =    1    2    3    4    5    6    7    8    9    0    -    _    bspc
   _    _    _    _    _    _    left down up   rght _    _    _
+  _    `    _    _    _    _    _    _    _    [    ]    _    _
+  _    _    _    _              _              ret  _    _    _    _
+)
+
+(deflayer navigation
   _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    left down up   rght _    _    _
+  _    `    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _              _              _    _    _    _    _
+)
+
+(deflayer numbers
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  =    1    2    3    4    5    6    7    8    9    0    -    _    bspc
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    `    _    _    _    _    _    _    _    [    ]    _    _
+  _    _    _    _              _              ret  _    _    _    _
 )
 
 (deflayer layers
   _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    @qwr @hom _    _    _    _    _    _    _    _    _    _    _
+  _    @qwr @hom @new _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _
@@ -125,11 +152,14 @@
   ;; Space with layer toggles
   pun (tap-hold-next-release 200 ret (layer-toggle punctuation))
   spe (tap-hold-next-release 200 bspc (layer-toggle special))
+  nav (tap-hold-next-release 200 ret (layer-toggle navigation))
+  num (tap-hold-next-release 200 bspc (layer-toggle numbers))
 
   ;; Grave with layer toggle
   grl (tap-hold-next-release 200 grv (layer-toggle layers))
 
   ;; Layer switching
+  new (layer-switch newmod)
   hom (layer-switch homemod)
   qwr (layer-switch qwerty)
 )

@@ -27,7 +27,7 @@ vim.keymap.set("n", "<leader>D", [["_D]])
 vim.keymap.set("n", "<leader>dd", [["_dd]])
 
 -- This is going to get me cancelled
-vim.keymap.set("i", "<C-c>", "<Esc>")
+-- vim.keymap.set("i", "<C-c>", "<Esc>")
 
 -- Splitting windows same way as TMUX
 vim.keymap.set("n", "<C-w>-", ":split<CR>")

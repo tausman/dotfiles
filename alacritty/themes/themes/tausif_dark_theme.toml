@@ -2,32 +2,34 @@
 
 # Default colors
 [colors.primary]
-background = '#000000'
-foreground = '#c7c7c7'
+background = '#282828'
+# background = '#000000' -- Original Github dark high contrast background
+foreground = '#f0f3f6'
 
 # Cursor colors
 [colors.cursor]
-text = '#feffff'
-cursor = '#c7c7c7'
+text = '#0a0c10'
+cursor = '#f0f3f6'
 
 # Normal colors
 [colors.normal]
 black = '#000000'
-red = '#b83019'
-green = '#51bf37'
-yellow = '#c6c43d'
-blue = '#0c24bf'
-magenta = '#b93ec1'
-cyan = '#53c2c5'
-white = '#c7c7c7'
+red = '#ff9492'
+green = '#26cd4d'
+yellow = '#f0b72f'
+blue = '#71b7ff'
+magenta = '#cb9eff'
+cyan = '#39c5cf'
+white = '#d9dee3'
 
 # Bright colors
 [colors.bright]
-black = '#676767'
-red = '#ef766d'
-green = '#8cf67a'
-yellow = '#fefb7e'
-blue = '#6a71f6'
-magenta = '#f07ef8'
-cyan = '#8ef9fd'
-white = '#feffff'
+black = '#9ea7b3'
+red = '#ffb1af'
+green = '#4ae168'
+yellow = '#f7c843'
+blue = '#91cbff'
+magenta = '#cb9eff'
+cyan = '#39c5cf'
+white = '#d9dee3'
+
