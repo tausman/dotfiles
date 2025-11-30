@@ -42,3 +42,23 @@ vim.opt.sessionoptions = "buffers,curdir,folds,help,tabpages,winsize,terminal"
 
 -- use a stack for the jumplist
 vim.opt.jumpoptions:append { "stack" }
+
+-- -- *** EXPERIMENTAL: Make it easer to use mouse in vim *** --
+-- -- need to use select mode on mouse select to keep it distinct from visual mode
+-- vim.opt.selectmode = "mouse,key"
+--
+-- -- allow clicking to insert
+-- vim.keymap.set('n', '<LeftMouse>', '<LeftMouse>i')
+--
+-- -- hitting escape while in select mode goes back to normal mode instead of insert mode
+-- vim.keymap.set('s', '<Esc>', '<C-\\><C-g>')
+--
+-- -- This maps all printable characters (space through ~) in select mode to:
+-- -- 1. <C-g> - convert select mode to visual mode
+-- -- 2. c - delete selection and enter insert mode
+-- -- 3. {char} - type the character you pressed
+-- for i = 32, 126 do
+--     local char = string.char(i)
+--     vim.keymap.set('s', char, '<C-g>c' .. char, { noremap = true })
+-- end
+-- -- *** END EXPERIMENTAL *** --
