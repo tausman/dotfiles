@@ -215,3 +215,6 @@ export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} 
 
 . "$HOME/.local/bin/env"
 export GPG_TTY=$(tty)
+
+# Added by Yarn Switch
+source "/Users/tausif.rahman/.yarn/switch/env"
