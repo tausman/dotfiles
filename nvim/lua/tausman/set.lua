@@ -41,7 +41,7 @@ vim.opt.smartcase = true
 vim.opt.sessionoptions = "buffers,curdir,folds,help,tabpages,winsize,terminal"
 
 -- use a stack for the jumplist
-vim.opt.jumpoptions:append { "stack" }
+-- vim.opt.jumpoptions:append { "stack" }
 
 -- -- *** EXPERIMENTAL: Make it easer to use mouse in vim *** --
 -- -- need to use select mode on mouse select to keep it distinct from visual mode

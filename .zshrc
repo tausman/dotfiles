@@ -82,11 +82,11 @@ source $ZSH/oh-my-zsh.sh
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='nvim'
-# fi
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='nvim'
+fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch $(uname -m)"
@@ -137,10 +137,10 @@ then
     # This is needed for Ghostty bc of preexisting mappings
     # also helpful for new keyboard -- COMMENTED OUT BC USED BELOW
     # bindkey -M viins '^]' vi-cmd-mode
-    # Remap ctrl-c to escape
-    bindkey -M viins '^C' vi-cmd-mode
-    # Make a new interrupt command since ctrl-c is gone
-    stty intr ^]
+    # # Remap ctrl-c to escape
+    # bindkey -M viins '^C' vi-cmd-mode
+    # # Make a new interrupt command since ctrl-c is gone
+    # stty intr ^]
     # Trying new crtl+p/n keymappings to match vim
     bindkey -M vicmd "^p" history-beginning-search-backward-end
     bindkey -M vicmd "^n" history-beginning-search-forward-end
