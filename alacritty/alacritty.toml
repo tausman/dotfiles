@@ -32,6 +32,7 @@ import = [
 [font]
 # normal = { family = "MonaspiceNe Nerd Font Mono", style = "Regular" }
 normal = { family = "Hack Nerd Font Mono", style = "Regular" }
+# normal = { family = "FiraMono Nerd Font Mono", style = "Regular" }
 size = 11.75
 
 [cursor]
