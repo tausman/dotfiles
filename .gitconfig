@@ -7,6 +7,8 @@
 [user]
 	email = tausif.rahman@datadoghq.com
 	name = Tausif Rahman
+[pull]
+	rebase = true
 [push]
 	autoSetupRemote = true
 [diff]

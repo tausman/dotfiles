@@ -83,7 +83,7 @@ source $ZSH/oh-my-zsh.sh
 
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
+  export EDITOR='nvim'
 else
   export EDITOR='nvim'
 fi
@@ -156,19 +156,26 @@ PROMPT=$(echo $PROMPT | sed 's/%c%/%~%/')
 
 # BEGIN ANSIBLE MANAGED BLOCK
 # Load homebrew shell variables
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
 # Force certain more-secure behaviours from homebrew
 export HOMEBREW_NO_INSECURE_REDIRECT=1
 export HOMEBREW_CASK_OPTS=--require-sha
-export HOMEBREW_DIR=/opt/homebrew
-export HOMEBREW_BIN=/opt/homebrew/bin
 
-# Load python shims
-eval "$(pyenv init -)"
+if [[ "$(uname)" == "Darwin" ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    export HOMEBREW_DIR=/opt/homebrew
+    export HOMEBREW_BIN=/opt/homebrew/bin
+elif [[ "$(uname)" == "Linux" ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
+    export HOMEBREW_DIR=/home/linuxbrew/.linuxbrew
+    export HOMEBREW_BIN=/home/linuxbrew/.linuxbrew/bin
+fi
 
-# Load ruby shims
-eval "$(rbenv init -)"
+if [[ "$(uname)" == "Darwin" ]]; then
+    # Load python shims
+    eval "$(pyenv init -)"
+    # Load ruby shims
+    eval "$(rbenv init -)"
+fi
 
 # Prefer GNU binaries to Macintosh binaries.
 export PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
@@ -208,13 +215,27 @@ export GOPRIVATE=github.com/DataDog
 export GOPROXY=binaries.ddbuild.io,https://proxy.golang.org,direct
 export GONOSUMDB=github.com/DataDog,go.ddbuild.io
 # END ANSIBLE MANAGED BLOCK
-export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
-export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
-export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
-export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
 
-. "$HOME/.local/bin/env"
-export GPG_TTY=$(tty)
+if [[ "$(uname)" == "Darwin" ]]; then
+    export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
+    export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
+    export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
+    export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
+elif [[ "$(uname)" == "Linux" ]]; then
+    # export GITLAB_TOKEN=$(pass show gitlab_token)
+    # export OPENAI_API_KEY=$(pass show openai_api_key)
+    # export ATLASSIAN_TOKEN=$(pass show atlassian_token)
+    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
+fi
+
+if [[ "$(uname)" == "Darwin" ]]; then
+    . "$HOME/.local/bin/env"
+    export GPG_TTY=$(tty)
+fi
 
 # Added by Yarn Switch
-source "/Users/tausif.rahman/.yarn/switch/env"
+if [[ "$(uname)" == "Darwin" ]]; then
+    source "/Users/tausif.rahman/.yarn/switch/env"
+elif [[ "$(uname)" == "Linux" ]]; then
+    source "/home/bits/.yarn/switch/env"
+fi
