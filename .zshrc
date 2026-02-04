@@ -111,7 +111,15 @@ alias gs='git status'
 alias gc='git checkout'
 gwa() {
     local repo_name=$(basename "$(git rev-parse --show-toplevel)")
-    git worktree add ~/worktrees/"$repo_name"/"$1" -b "$1"
+    local branch_name="tausman/$1"
+    if git worktree list --porcelain | grep -q "branch refs/heads/$branch_name"; then
+        echo "Error: branch '$branch_name' is already checked out by another worktree"
+        return 1
+    elif git show-ref --verify --quiet refs/heads/"$branch_name"; then
+        git worktree add ~/worktrees/"$repo_name"/"$1" "$branch_name"
+    else
+        git worktree add ~/worktrees/"$repo_name"/"$1" -b "$branch_name"
+    fi
 }
 alias gwr='git worktree remove'
 alias gfo='git fetch origin'
