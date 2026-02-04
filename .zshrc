@@ -109,6 +109,7 @@ alias py3test='/opt/dogweb/bin/python -m pytest --showlocals'
 # Git aliases
 alias gs='git status'
 alias gc='git checkout'
+unalias gwa 2>/dev/null
 gwa() {
     local repo_name=$(basename "$(git rev-parse --show-toplevel)")
     local branch_name="tausman/$1"
@@ -123,6 +124,14 @@ gwa() {
 }
 alias gwr='git worktree remove'
 alias gfo='git fetch origin'
+alias gpo='git pull origin'
+alias gr='git rebase -i --update-refs'
+gri() {
+    local commit=$(git log --oneline --decorate | awk '{printf "%-10s %s\n", (NR==1 ? "HEAD" : "HEAD~"NR-1), $0}' | fzf | awk '{print $2}')
+    if [[ -n "$commit" ]]; then
+        git rebase -i --update-refs "$commit"^
+    fi
+}
 
 # PERSONAL CONFIGURATION
 # Use vi cursor change `vi-mode` plugin
