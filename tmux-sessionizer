@@ -61,6 +61,7 @@ session_idx=""
 session_cmd=""
 user_selected=""
 split_type=""
+kill_mode=""
 VERSION="0.1.0"
 
 while [[ "$#" -gt 0 ]]; do
@@ -69,6 +70,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "Usage: tmux-sessionizer [OPTIONS] [SEARCH_PATH]"
         echo "Options:"
         echo "  -h, --help             Display this help message"
+        echo "  -k, --kill             Select and kill multiple sessions with fzf (Tab to multi-select)"
         echo "  -s, --session <name>   session command index."
         echo "  --vsplit               Create vertical split (horizontal layout) for session command"
         echo "  --hsplit               Create horizontal split (vertical layout) for session command"
@@ -100,6 +102,9 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --hsplit)
         split_type="hsplit"
+        ;;
+    -k | --kill)
+        kill_mode="true"
         ;;
     -v | --version)
         echo "tmux-sessionizer version $VERSION"
@@ -314,7 +319,23 @@ handle_split_session_cmd() {
     fi
 }
 
-if [[ ! -z $session_cmd ]]; then
+if [[ "$kill_mode" == "true" ]]; then
+    sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
+    if [[ -z "$sessions" ]]; then
+        echo "No tmux sessions found."
+        exit 0
+    fi
+    selected_sessions=$(echo "$sessions" | fzf -m --header "Tab to select, Enter to kill")
+    if [[ -z "$selected_sessions" ]]; then
+        exit 0
+    fi
+    while IFS= read -r session; do
+        log "killing session: $session"
+        tmux kill-session -t "$session"
+        echo "Killed session: $session"
+    done <<< "$selected_sessions"
+    exit 0
+elif [[ ! -z $session_cmd ]]; then
     handle_session_cmd
 elif [[ ! -z $user_selected ]]; then
     selected="$user_selected"

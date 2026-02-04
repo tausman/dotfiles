@@ -103,6 +103,19 @@ fi
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+# Custom aliases
+alias py3test='/opt/dogweb/bin/python -m pytest --showlocals'
+
+# Git aliases
+alias gs='git status'
+alias gc='git checkout'
+gwa() {
+    local repo_name=$(basename "$(git rev-parse --show-toplevel)")
+    git worktree add ~/worktrees/"$repo_name"/"$1" -b "$1"
+}
+alias gwr='git worktree remove'
+alias gfo='git fetch origin'
+
 # PERSONAL CONFIGURATION
 # Use vi cursor change `vi-mode` plugin
 VI_MODE_SET_CURSOR=true
@@ -225,7 +238,7 @@ elif [[ "$(uname)" == "Linux" ]]; then
     # export GITLAB_TOKEN=$(pass show gitlab_token)
     # export OPENAI_API_KEY=$(pass show openai_api_key)
     # export ATLASSIAN_TOKEN=$(pass show atlassian_token)
-    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
+    export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
 fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
