@@ -14,3 +14,7 @@ key-path = "/home/bits/.ssh/id_ed25519"
 
 [git]
 push-new-bookmark = true
+
+[remotes.origin]
+auto-track-bookmarks = "*"
+
