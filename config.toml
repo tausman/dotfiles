@@ -1,0 +1,13 @@
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
+
+[user]
+name = "Tausif Rahman"
+email = "tausif.rahman@datadoghq.com"
+
+[signing]
+behavior = "own"
+backend = "ssh"
+key = "/home/bits/.ssh/id_ed25519.pub"
+
+[signing.ssh]
+key-path = "/home/bits/.ssh/id_ed25519"
