@@ -51,7 +51,8 @@ je() {
     if [[ $# -gt 0 ]]; then
         jj edit "$@"
     else
-        local target=$(jj bookmark list -T 'name ++ "\n"' | fzf --header="Bookmarks (esc for commits)")
+        local target=$(_jj_colored_bookmarks | fzf --ansi --header="Bookmarks (esc for commits)")
+        target=${target% \*}  # strip current marker
         if [[ -z "$target" ]]; then
             target=$(jj log --no-graph -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"' | fzf | awk '{print $1}')
         fi
@@ -62,7 +63,8 @@ jn() {
     if [[ $# -gt 0 ]]; then
         jj new "$@"
     else
-        local target=$(jj bookmark list -T 'name ++ "\n"' | fzf --header="Bookmarks (esc for commits)")
+        local target=$(_jj_colored_bookmarks | fzf --ansi --header="Bookmarks (esc for commits)")
+        target=${target% \*}  # strip current marker
         if [[ -z "$target" ]]; then
             target=$(jj log --no-graph -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"' | fzf | awk '{print $1}')
         fi
@@ -73,17 +75,42 @@ alias js='jj status'
 alias jd='jj describe'
 alias jdm='jj describe -m'
 alias jb='jj bookmark'
-jbs() {
-    local bookmark=$(jj bookmark list -T 'name ++ "\n"' | fzf)
-    if [[ -n "$bookmark" ]]; then
-        jj bookmark set "$bookmark"
-    fi
+
+# Helper: returns colored bookmark list (green=trunk, red=merged into trunk, *=current)
+_jj_colored_bookmarks() {
+    local bookmarks=$(jj bookmark list 2>/dev/null | grep -v '^ ' | grep -v '(deleted)' | grep -v '^Hint:' | cut -d: -f1 | sort -u)
+    local trunk=$(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
+    local current=$(jj log -r '@' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
+    for b in ${(f)bookmarks}; do
+        local suffix=""
+        [[ "$b" == "$current" ]] && suffix=" *"
+        if [[ "$b" == "$trunk" ]]; then
+            # Green for trunk
+            printf '\033[32m%s%s\033[0m\n' "$b" "$suffix"
+        elif [[ -n $(jj log -r "$b & ::trunk()" --no-graph -T 'change_id' 2>/dev/null) ]]; then
+            # Red for merged into trunk
+            printf '\033[31m%s%s\033[0m\n' "$b" "$suffix"
+        else
+            printf '%s%s\n' "$b" "$suffix"
+        fi
+    done
 }
+
+jbs() {
+    local bookmark=$(_jj_colored_bookmarks | fzf --ansi --header="Select bookmark to set")
+    bookmark=${bookmark% \*}  # strip current marker
+    [[ -n "$bookmark" ]] && jj bookmark set "$bookmark"
+}
+
 alias jbc='jj bookmark create'
+
 jbd() {
-    local bookmark=$(jj bookmark list -T 'name ++ "\n"' | fzf)
-    if [[ -n "$bookmark" ]]; then
-        jj bookmark delete "$bookmark"
+    local selected=$(_jj_colored_bookmarks | fzf -m --ansi --header="Select bookmarks to delete (TAB to multi-select, red=merged, green=trunk)")
+    if [[ -n "$selected" ]]; then
+        echo "$selected" | while read -r b; do
+            b=${b% \*}  # strip current marker
+            jj bookmark delete "$b"
+        done
     fi
 }
 alias jbl='jj bookmark list'
