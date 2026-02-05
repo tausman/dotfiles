@@ -45,3 +45,65 @@ gcb() {
         git checkout "$branch"
     fi
 }
+
+# jj aliases
+je() {
+    if [[ $# -gt 0 ]]; then
+        jj edit "$@"
+    else
+        local target=$(jj bookmark list -T 'name ++ "\n"' | fzf --header="Bookmarks (esc for commits)")
+        if [[ -z "$target" ]]; then
+            target=$(jj log --no-graph -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"' | fzf | awk '{print $1}')
+        fi
+        [[ -n "$target" ]] && jj edit "$target"
+    fi
+}
+jn() {
+    if [[ $# -gt 0 ]]; then
+        jj new "$@"
+    else
+        local target=$(jj bookmark list -T 'name ++ "\n"' | fzf --header="Bookmarks (esc for commits)")
+        if [[ -z "$target" ]]; then
+            target=$(jj log --no-graph -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"' | fzf | awk '{print $1}')
+        fi
+        [[ -n "$target" ]] && jj new "$target"
+    fi
+}
+alias js='jj status'
+alias jd='jj describe'
+alias jdm='jj describe -m'
+alias jb='jj bookmark'
+jbs() {
+    local bookmark=$(jj bookmark list -T 'name ++ "\n"' | fzf)
+    if [[ -n "$bookmark" ]]; then
+        jj bookmark set "$bookmark"
+    fi
+}
+alias jbc='jj bookmark create'
+jbd() {
+    local bookmark=$(jj bookmark list -T 'name ++ "\n"' | fzf)
+    if [[ -n "$bookmark" ]]; then
+        jj bookmark delete "$bookmark"
+    fi
+}
+alias jbl='jj bookmark list'
+alias jl='jj log'
+alias jfetch='jj git fetch'
+alias jpull='jj git pull'
+alias jpush='jj git push'
+alias jpushd='jj git push --deleted'
+alias jinit='jj git init --git-repo .'
+jpr() {
+    local title=$(jj log -r @ --no-graph -T 'description.first_line()')
+    local head=$(jj log -r @ -T 'bookmarks' --no-graph | tr -d '*\n')
+    local base=$(jj log -r @- -T 'bookmarks' --no-graph | tr -d '*\n')
+    gh pr create --title "$title" --head "$head" --base "$base"
+}
+alias jspi='jj split -i'
+alias jr='jj rebase'
+alias ju='jj undo'
+alias jol='jj op log'
+alias jor='jj op restore'
+alias ja='jj abandon'
+alias jshow='jj show'
+alias jdiff='jj diff'
