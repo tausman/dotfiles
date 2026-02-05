@@ -124,10 +124,9 @@ jpr() {
     local head=$(jj log -r @ -T 'bookmarks' --no-graph | tr -d '*\n')
     # Find nearest ancestor with a bookmark
     local default_base=$(jj log -r 'latest(ancestors(@-) & bookmarks())' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
-    # Parse bookmark names from first column (exclude @origin lines, deleted, hints)
-    local bookmarks=$(jj bookmark list 2>/dev/null | grep -v '^ ' | grep -v '(deleted)' | grep -v '^Hint:' | cut -d: -f1)
     # Put default at top, then rest (excluding default to avoid dupe)
-    local base=$(echo "$bookmarks" | awk -v def="$default_base" 'BEGIN{print def} $0!=def{print}' | fzf --header="Select base bookmark (default: $default_base)")
+    local base=$(_jj_colored_bookmarks | awk -v def="$default_base" 'BEGIN{print def} $0!=def && $0!~"^"def" \\*$"{print}' | fzf --ansi --header="Select base bookmark (default: $default_base)")
+    base=${base% \*}  # strip current marker
     [[ -z "$base" ]] && return 1
     gh pr create --title "$title" --head "$head" --base "$base"
 }
