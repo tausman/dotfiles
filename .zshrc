@@ -245,3 +245,5 @@ if [[ "$(uname)" == "Darwin" ]]; then
 elif [[ "$(uname)" == "Linux" ]]; then
     source "/home/bits/.yarn/switch/env"
 fi
+
+. "$HOME/.cargo/env"
