@@ -89,7 +89,6 @@ jbd() {
 alias jbl='jj bookmark list'
 alias jl='jj log'
 alias jfetch='jj git fetch'
-alias jpull='jj git pull'
 alias jpush='jj git push'
 alias jpushd='jj git push --deleted'
 alias jinit='jj git init --git-repo .'
