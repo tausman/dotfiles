@@ -16,23 +16,23 @@ key-path = "/home/bits/.ssh/id_ed25519"
 push-new-bookmark = true
 
 [remotes.origin]
-auto-track-bookmarks = "*"
+auto-track-bookmarks = "tausman/*"
 
 # Accordion-style log: expands around current position, collapses elsewhere
-[revsets]
-log = "@ | bases | mybookmarks | curbookmark::@ | @::nextbookmark | downstream(@, bookmarksandheads)"
-
-[revset-aliases]
-# Base branches to always show (add 'main' if needed: 'trunk() | main')
-'bases' = 'trunk()'
-# Commits in y that are descendants of x
-'downstream(x,y)' = '(x::y) & y'
-# My bookmarks that descend from trunk
-'mybookmarks' = 'downstream(trunk(), bookmarks()) & mine()'
-# Bookmarks + head commits I own
-'bookmarksandheads' = 'mybookmarks | (heads(trunk()::) & mine())'
-# Most recent bookmark before current position
-'curbookmark' = 'latest(mybookmarks::@- & mybookmarks)'
-# First bookmark or head after current position
-'nextbookmark' = 'roots(@:: & bookmarksandheads)'
+# [revsets]
+# log = "@ | bases | mybookmarks | curbookmark::@ | @::nextbookmark | downstream(@, bookmarksandheads)"
+#
+# [revset-aliases]
+# # Base branches to always show (add 'main' if needed: 'trunk() | main')
+# 'bases' = 'trunk() | main'
+# # Commits in y that are descendants of x
+# 'downstream(x,y)' = '(x::y) & y'
+# # My bookmarks that descend from trunk
+# 'mybookmarks' = 'downstream(trunk(), bookmarks()) & mine()'
+# # Bookmarks + head commits I own
+# 'bookmarksandheads' = 'mybookmarks | (heads(trunk()::) & mine())'
+# # Most recent bookmark before current position
+# 'curbookmark' = 'latest(mybookmarks::@- & mybookmarks)'
+# # First bookmark or head after current position
+# 'nextbookmark' = 'roots(@:: & bookmarksandheads)'
 
