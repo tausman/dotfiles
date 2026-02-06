@@ -116,14 +116,19 @@ jbd() {
 alias jbl='jj bookmark list'
 alias jl='jj log'
 alias jfetch='jj git fetch'
-alias jpull='jj git pull'
 alias jpush='jj git push'
 alias jpushd='jj git push --deleted'
 alias jinit='jj git init --git-repo .'
 jpr() {
     local title=$(jj log -r @ --no-graph -T 'description.first_line()')
     local head=$(jj log -r @ -T 'bookmarks' --no-graph | tr -d '*\n')
-    local base=$(jj log -r @- -T 'bookmarks' --no-graph | tr -d '*\n')
+    # Find nearest ancestor with a bookmark
+    local default_base=$(jj log -r 'latest(ancestors(@-) & bookmarks())' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
+    # Parse bookmark names from first column (exclude @origin lines, deleted, hints)
+    local bookmarks=$(jj bookmark list 2>/dev/null | grep -v '^ ' | grep -v '(deleted)' | grep -v '^Hint:' | cut -d: -f1)
+    # Put default at top, then rest (excluding default to avoid dupe)
+    local base=$(echo "$bookmarks" | awk -v def="$default_base" 'BEGIN{print def} $0!=def{print}' | fzf --header="Select base bookmark (default: $default_base)")
+    [[ -z "$base" ]] && return 1
     gh pr create --title "$title" --head "$head" --base "$base"
 }
 alias jspi='jj split -i'
