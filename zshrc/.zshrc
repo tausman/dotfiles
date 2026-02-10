@@ -176,12 +176,12 @@ elif [[ "$(uname)" == "Linux" ]]; then
     export HOMEBREW_BIN=/home/linuxbrew/.linuxbrew/bin
 fi
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    # Load python shims
-    eval "$(pyenv init -)"
-    # Load ruby shims
-    eval "$(rbenv init -)"
-fi
+# if [[ "$(uname)" == "Darwin" ]]; then
+#     # Load python shims
+#     eval "$(pyenv init -)"
+#     # Load ruby shims
+#     eval "$(rbenv init -)"
+# fi
 
 # Prefer GNU binaries to Macintosh binaries.
 export PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
@@ -223,9 +223,9 @@ export GONOSUMDB=github.com/DataDog,go.ddbuild.io
 # END ANSIBLE MANAGED BLOCK
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
-    export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
-    export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
+    # export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
+    # export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
+    # export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
     export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
 elif [[ "$(uname)" == "Linux" ]]; then
     # export GITLAB_TOKEN=$(pass show gitlab_token)
