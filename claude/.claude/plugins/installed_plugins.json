@@ -137,10 +137,10 @@
     "github@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tausif.rahman/.claude/plugins/cache/claude-plugins-official/github/e30768372b41",
-        "version": "e30768372b41",
+        "installPath": "/Users/tausif.rahman/.claude/plugins/cache/claude-plugins-official/github/2cd88e7947b7",
+        "version": "2cd88e7947b7",
         "installedAt": "2026-01-28T02:13:27.085Z",
-        "lastUpdated": "2026-01-28T02:13:27.085Z",
+        "lastUpdated": "2026-02-11T00:27:35.764Z",
         "gitCommitSha": "e30768372b4150ca1bc0839d93283e8edc30d60d"
       }
     ]
