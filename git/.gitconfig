@@ -46,3 +46,5 @@
 	skipHash = true
 [gpg]
 	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = /home/bits/.ssh/allowed_signers

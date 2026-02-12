@@ -45,6 +45,7 @@ setup_base() {
     brew install gh neovim
 
     gh auth login
+    echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
 
     echo "Base setup complete."
     cd ~
