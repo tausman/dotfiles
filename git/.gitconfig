@@ -7,7 +7,7 @@
 [user]
 	email = tausif.rahman@datadoghq.com
 	name = Tausif Rahman
-	signingkey = /home/bits/.ssh/id_ed25519.pub
+	signingkey = ~/.ssh/id_ed25519.pub
 [pull]
 	rebase = true
 [push]
@@ -47,4 +47,4 @@
 [gpg]
 	format = ssh
 [gpg "ssh"]
-	allowedSignersFile = /home/bits/.ssh/allowed_signers
+	allowedSignersFile = ~/.ssh/allowed_signers

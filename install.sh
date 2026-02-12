@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run order: stow -> base -> dogweb -> web-ui
+# Run order: move_originals -> stow -> base -> web-ui -> dogweb
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -47,6 +47,11 @@ setup_base() {
     gh auth login
     echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
 
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+    sudo apt remove tmux
+    brew install tmux
+
     echo "Base setup complete."
     cd ~
 }
@@ -62,13 +67,19 @@ setup_web_ui() {
     curl -sS https://repo.yarnpkg.com/install | bash
     rm ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
 
-    # Run doctor and apply fixes
-    bash doctor
-
-    brew install watchman
     source ~/.zshrc
     yarn
+    yarn install
     yarn dev
+
+    bash ./dev/ssl/generate_and_trust_localhost_certificate.sh
+    brew install watchman
+
+    git config remote.origin.tagOpt --no-tags
+    git config remote.origin.prune true
+
+    # Run doctor and apply fixes
+    bash doctor
 
     echo "Web UI setup complete."
     cd ~
