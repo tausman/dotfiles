@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "apiKeyHelper": "workspace_secret ANTHROPIC_APIKEY1",
   "permissions": {
     "allow": [
       "Bash(find:*)",
@@ -57,6 +58,15 @@
     "orgstore@datadog-claude-plugins": true,
     "github@claude-plugins-official": true
   },
+  "extraKnownMarketplaces": {
+    "datadog": {
+      "source": {
+        "source": "github",
+        "repo": "DataDog/claude-marketplace"
+      }
+    }
+  },
+  "forceLoginMethod": "console",
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
