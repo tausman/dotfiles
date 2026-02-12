@@ -231,7 +231,7 @@ elif [[ "$(uname)" == "Linux" ]]; then
     # export GITLAB_TOKEN=$(pass show gitlab_token)
     # export OPENAI_API_KEY=$(pass show openai_api_key)
     # export ATLASSIAN_TOKEN=$(pass show atlassian_token)
-    export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
+    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
 fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
