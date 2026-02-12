@@ -53,6 +53,7 @@ setup_base() {
     brew install tmux
 
     echo "Base setup complete."
+    echo "BE SURE TO ADD YOUR SIGNING KEY TO YOUR PROFILE: `~/.ssh/id_ed25519.pub`"
     cd ~
 }
 
