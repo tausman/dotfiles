@@ -96,11 +96,20 @@ setup_dogweb() {
     cd ~
 }
 
+run_all() {
+    move_originals
+    stow_packages
+    setup_base
+    setup_web_ui
+    setup_dogweb
+}
+
 case "${1:-stow}" in
+    all)            run_all ;;
     move-originals) move_originals ;;
     stow)           stow_packages ;;
     base)           setup_base ;;
     web-ui)         setup_web_ui ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {move-originals|stow|base|web-ui|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|move-originals|stow|base|web-ui|dogweb}" && exit 1 ;;
 esac
