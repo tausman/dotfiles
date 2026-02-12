@@ -20,6 +20,9 @@
     <key>KeepAlive</key>
     <true/>
 
+    <key>Nice</key>
+    <integer>-20</integer>
+
     <key>StandardOutPath</key>
     <string>/tmp/kmonad.out.log</string>
     <!-- <string>/tmp/kanata.out.log</string> -->

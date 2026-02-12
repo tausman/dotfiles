@@ -41,6 +41,7 @@
     ],
     "deny": []
   },
+  "model": "opus[1m]",
   "enabledPlugins": {
     "pr-review-toolkit@claude-code-plugins": true,
     "feature-dev@claude-code-plugins": true,
@@ -59,6 +60,5 @@
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
-  },
-  "model": "opus"
+  }
 }
