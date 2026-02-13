@@ -51,6 +51,7 @@ init() {
     else
         echo "gh already authenticated, skipping..."
     fi
+    source ~/.zshrc
     echo "init complete"
 }
 
