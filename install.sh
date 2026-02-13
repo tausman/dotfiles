@@ -78,8 +78,6 @@ setup_web_ui() {
     # Install volta
     brew install volta
     rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
-    export VOLTA_HOME="$HOME/.volta"
-    export PATH="$VOLTA_HOME/bin:$PATH"
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
@@ -122,7 +120,12 @@ run_all() {
     setup_base
     setup_web_ui
     setup_dogweb
-    echo "BE SURE TO ADD YOUR SIGNING KEY TO YOUR PROFILE ON GITHUB: `~/.ssh/id_ed25519.pub`"
+    echo "Run: source ~/.zshrc"
+    cat <<'EOF'
+    DONT FORGET TO RUN ON THE HOST:
+    scp workspace-${name}:~/.config/datadog/dev-ssl/localhost.crt ~
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/localhost.crt
+EOF
 }
 
 case "${1:-stow}" in
