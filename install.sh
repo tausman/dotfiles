@@ -76,7 +76,7 @@ setup_web_ui() {
     cd ~/dd/web-ui
 
     # Install volta
-    curl https://get.volta.sh | bash
+    brew install volta
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
