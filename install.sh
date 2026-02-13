@@ -87,6 +87,11 @@ setup_web_ui() {
     bash doctor
 
     echo "Web UI setup complete."
+    cat <<'EOF'
+    DONT FORGET TO RUN:
+    scp workspace-${name}:~/.config/datadog/dev-ssl/localhost.crt ~
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/localhost.crt
+    EOF
     cd ~
 }
 
