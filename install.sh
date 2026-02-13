@@ -77,7 +77,8 @@ setup_web_ui() {
 
     # Install volta
     brew install volta
-    rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
+    export VOLTA_HOME="$HOME/.volta"
+    export PATH="$VOLTA_HOME/bin:$PATH"
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
@@ -91,6 +92,8 @@ setup_web_ui() {
 
     git config remote.origin.tagOpt --no-tags
     git config remote.origin.prune true
+
+    rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
 
     # Run doctor and apply fixes
     bash doctor
