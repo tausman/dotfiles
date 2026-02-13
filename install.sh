@@ -43,9 +43,13 @@ init() {
 
     # github config
     brew install gh
-    gh auth login
-    echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
-    gh ssh-key add ~/.ssh/id_ed25519.pub --type signing
+    if ! gh auth status &>/dev/null; then
+        gh auth login
+        echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
+        gh ssh-key add ~/.ssh/id_ed25519.pub --type signing
+    else
+        echo "gh already authenticated, skipping..."
+    fi
     echo "init complete"
 }
 
