@@ -58,7 +58,7 @@ setup_base() {
     echo "Setting up base tools..."
 
     # core tools
-    sudo apt remove tmux
+    sudo apt remove -y tmux
     brew install neovim fzf tmux go
 
     # rust install
@@ -82,7 +82,6 @@ setup_web_ui() {
     curl -sS https://repo.yarnpkg.com/install | bash
     rm ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
 
-    source ~/.zshrc
     yarn
     yarn install
     yarn dev
@@ -102,6 +101,7 @@ setup_web_ui() {
     scp workspace-${name}:~/.config/datadog/dev-ssl/localhost.crt ~
     sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/localhost.crt
 EOF
+    echo "Run: source ~/.zshrc"
 }
 
 setup_dogweb() {
