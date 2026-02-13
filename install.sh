@@ -96,7 +96,7 @@ setup_web_ui() {
     DONT FORGET TO RUN:
     scp workspace-${name}:~/.config/datadog/dev-ssl/localhost.crt ~
     sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/localhost.crt
-    EOF
+EOF
     cd ~
 }
 
