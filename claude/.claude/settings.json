@@ -1,6 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "apiKeyHelper": "workspace_secret ANTHROPIC_APIKEY1",
   "permissions": {
     "allow": [
       "Bash(find:*)",
@@ -44,10 +43,7 @@
   },
   "model": "opus[1m]",
   "enabledPlugins": {
-    "pr-review-toolkit@claude-code-plugins": true,
-    "feature-dev@claude-code-plugins": true,
     "go-code-reviewer@datadog-claude-plugins": true,
-    "atlassian-remote-mcp@datadog-claude-plugins": true,
     "python-code-reviewer@datadog-claude-plugins": true,
     "redblue@datadog-claude-plugins": true,
     "dd@datadog-claude-plugins": true,
