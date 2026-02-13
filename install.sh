@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run order: move_originals -> stow -> base -> web-ui -> dogweb
+# Run order: init -> move_originals -> stow -> base -> web-ui -> dogweb
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,7 +23,7 @@ move_originals() {
 }
 
 stow_packages() {
-    sudo apt install stow
+    brew install stow
     cd ~/dotfiles
     for pkg in "${PACKAGES[@]}"; do
         echo "Stowing $pkg..."
@@ -33,23 +33,28 @@ stow_packages() {
     cd ~
 }
 
-setup_base() {
-    echo "Setting up base tools..."
-
+init() {
+    echo "initializing..."
     # Install linuxbrew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    echo >> /home/bits/.zshrc
-    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> /home/bits/.zshrc
+    echo >> ~/.zshrc
+    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> ~/.zshrc
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
-    # core tools
-    sudo apt remove tmux
-    brew install gh neovim fzf tmux go
-
     # github config
+    brew install gh
     gh auth login
     echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
     gh ssh-key add ~/.ssh/id_ed25519.pub --type signing
+    echo "init complete"
+}
+
+setup_base() {
+    echo "Setting up base tools..."
+
+    # core tools
+    sudo apt remove tmux
+    brew install neovim fzf tmux go
 
     # rust install
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -106,6 +111,7 @@ setup_dogweb() {
 }
 
 run_all() {
+    init
     move_originals
     stow_packages
     setup_base
@@ -116,10 +122,11 @@ run_all() {
 
 case "${1:-stow}" in
     all)            run_all ;;
+    init)           init ;;
     move-originals) move_originals ;;
     stow)           stow_packages ;;
     base)           setup_base ;;
     web-ui)         setup_web_ui ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|move-originals|stow|base|web-ui|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|init|move-originals|stow|base|web-ui|dogweb}" && exit 1 ;;
 esac
