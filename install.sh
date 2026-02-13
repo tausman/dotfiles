@@ -77,6 +77,7 @@ setup_web_ui() {
 
     # Install volta
     brew install volta
+    rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
     export VOLTA_HOME="$HOME/.volta"
     export PATH="$VOLTA_HOME/bin:$PATH"
 
