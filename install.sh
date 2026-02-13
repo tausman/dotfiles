@@ -29,8 +29,8 @@ stow_packages() {
         echo "Stowing $pkg..."
         stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles "$pkg"
     done
-    source ~/.zshrc
     echo "Done stowing packages."
+    echo "Run: source ~/.zshrc"
     cd ~
 }
 
@@ -51,7 +51,7 @@ init() {
     else
         echo "gh already authenticated, skipping..."
     fi
-    source ~/.zshrc
+    echo "Run: source ~/.zshrc"
     echo "init complete"
 }
 
