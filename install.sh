@@ -85,6 +85,7 @@ setup_web_ui() {
     export PATH="$HOME/.yarn/switch/bin:$PATH"
 
     yarn
+    rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
     yarn install
 
     bash ./dev/ssl/generate_and_trust_localhost_certificate.sh
@@ -92,8 +93,6 @@ setup_web_ui() {
 
     git config remote.origin.tagOpt --no-tags
     git config remote.origin.prune true
-
-    rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
 
     # Run doctor and apply fixes
     bash doctor
