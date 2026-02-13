@@ -110,7 +110,8 @@ setup_dogweb() {
     echo "Setting up dogweb..."
     cd ~/dd/dogweb
     update_deps
-    pytest dogweb/tests/unit/util/test_signup.py
+    # This doesn't work in the script
+    # pytest dogweb/tests/unit/util/test_signup.py
     alias py3test='/opt/dogweb/bin/python -m pytest --showlocals'
     echo "Dogweb setup complete."
 }
