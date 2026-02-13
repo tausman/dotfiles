@@ -42,18 +42,22 @@ setup_base() {
     echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> /home/bits/.zshrc
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
-    brew install gh neovim
+    # core tools
+    sudo apt remove tmux
+    brew install gh neovim fzf tmux go
 
+    # github config
     gh auth login
     echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
 
+    # rust install
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-    sudo apt remove tmux
-    brew install tmux
+    # obsidian
+    mkdir -p ~/vaults/work
 
     echo "Base setup complete."
-    echo "BE SURE TO ADD YOUR SIGNING KEY TO YOUR PROFILE: `~/.ssh/id_ed25519.pub`"
+    echo "BE SURE TO ADD YOUR SIGNING KEY TO YOUR PROFILE ON GITHUB: `~/.ssh/id_ed25519.pub`"
     cd ~
 }
 
@@ -102,6 +106,7 @@ run_all() {
     setup_base
     setup_web_ui
     setup_dogweb
+    echo "BE SURE TO ADD YOUR SIGNING KEY TO YOUR PROFILE ON GITHUB: `~/.ssh/id_ed25519.pub`"
 }
 
 case "${1:-stow}" in
