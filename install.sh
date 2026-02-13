@@ -86,7 +86,6 @@ setup_web_ui() {
 
     yarn
     yarn install
-    yarn dev
 
     bash ./dev/ssl/generate_and_trust_localhost_certificate.sh
     brew install watchman
