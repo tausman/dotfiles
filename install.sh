@@ -80,7 +80,6 @@ setup_web_ui() {
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
-    rm ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
 
     yarn
     yarn install
