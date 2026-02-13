@@ -80,6 +80,7 @@ setup_web_ui() {
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
+    source ~/.zshrc
 
     yarn
     yarn install
