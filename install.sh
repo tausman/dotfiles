@@ -77,6 +77,8 @@ setup_web_ui() {
 
     # Install volta
     brew install volta
+    export VOLTA_HOME="$HOME/.volta"
+    export PATH="$VOLTA_HOME/bin:$PATH"
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
