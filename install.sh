@@ -80,7 +80,7 @@ setup_web_ui() {
 
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
-    source ~/.zshrc
+    export PATH="$HOME/.yarn/switch/bin:$PATH"
 
     yarn
     yarn install
