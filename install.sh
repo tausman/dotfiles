@@ -31,7 +31,6 @@ stow_packages() {
     done
     echo "Done stowing packages."
     echo "Run: source ~/.zshrc"
-    cd ~
 }
 
 init() {
@@ -69,7 +68,7 @@ setup_base() {
     mkdir -p ~/vaults/work
 
     echo "Base setup complete."
-    cd ~
+    echo "Run: source ~/.zshrc"
 }
 
 setup_web_ui() {
@@ -103,7 +102,6 @@ setup_web_ui() {
     scp workspace-${name}:~/.config/datadog/dev-ssl/localhost.crt ~
     sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/localhost.crt
 EOF
-    cd ~
 }
 
 setup_dogweb() {
@@ -113,7 +111,6 @@ setup_dogweb() {
     pytest dogweb/tests/unit/util/test_signup.py
     alias py3test='/opt/dogweb/bin/python -m pytest --showlocals'
     echo "Dogweb setup complete."
-    cd ~
 }
 
 run_all() {
