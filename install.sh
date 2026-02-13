@@ -51,8 +51,8 @@ init() {
     else
         echo "gh already authenticated, skipping..."
     fi
-    echo "Run: source ~/.zshrc"
     echo "init complete"
+    echo "Run: source ~/.zshrc"
 }
 
 setup_base() {
