@@ -49,6 +49,7 @@ setup_base() {
     # github config
     gh auth login
     echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
+    gh ssh-key add ~/.ssh/id_ed25519.pub --type signing
 
     # rust install
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -57,7 +58,6 @@ setup_base() {
     mkdir -p ~/vaults/work
 
     echo "Base setup complete."
-    echo "BE SURE TO ADD YOUR SIGNING KEY TO YOUR PROFILE ON GITHUB: `~/.ssh/id_ed25519.pub`"
     cd ~
 }
 
