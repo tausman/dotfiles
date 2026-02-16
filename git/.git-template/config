@@ -1,0 +1,4 @@
+[remote "origin"]
+    fetch = +refs/heads/tausman*:refs/remotes/origin/tausman*
+    fetch = +refs/heads/aaa/authenticator_staging:refs/remotes/origin/aaa/authenticator_staging
+    fetch = +refs/heads/aaa/terminator_staging:refs/remotes/origin/aaa/terminator_staging

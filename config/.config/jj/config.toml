@@ -16,7 +16,15 @@ key-path = "/home/bits/.ssh/id_ed25519"
 push-new-bookmark = true
 
 [remotes.origin]
-auto-track-bookmarks = "tausman/*"
+auto-track-bookmarks = '''
+"prod" |
+"main" |
+"master" |
+"preprod" |
+"tausman/*" |
+"aaa/authenticator_staging" |
+"aaa/terminator_staging"
+'''
 
 # Accordion-style log: expands around current position, collapses elsewhere
 # [revsets]
