@@ -65,6 +65,9 @@ setup_base() {
     # core tools
     sudo apt remove -y tmux
     brew install neovim fzf tmux go
+    # Symlink tmux into ~/.local/bin so tmux's run-shell subprocesses can find it
+    # (they inherit tmux's global PATH, which doesn't include the Linuxbrew prefix)
+    ln -sf /home/linuxbrew/.linuxbrew/bin/tmux ~/.local/bin/tmux
 
     # rust install
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh

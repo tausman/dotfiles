@@ -4,6 +4,7 @@
 	untrackedCache = true
 	fsmonitor = true
 	editor = nvim
+    symlinks = true
 [user]
 	email = tausif.rahman@datadoghq.com
 	name = Tausif Rahman
