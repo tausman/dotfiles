@@ -8,6 +8,7 @@ PACKAGES=(
     claude
     config
     git
+    jj
     scripts
     tmux
     zshrc
@@ -27,7 +28,11 @@ stow_packages() {
     cd ~/dotfiles
     for pkg in "${PACKAGES[@]}"; do
         echo "Stowing $pkg..."
-        stow -R -d "$DOTFILES_DIR" -t "$HOME" --no-folding --dotfiles "$pkg"
+        if [ "$pkg" = "jj" ]; then
+            stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles --no-folding "$pkg"
+        else
+            stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles "$pkg"
+        fi
     done
     echo "Done stowing packages."
     echo "Run: source ~/.zshrc"
