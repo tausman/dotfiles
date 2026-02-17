@@ -27,7 +27,7 @@ stow_packages() {
     cd ~/dotfiles
     for pkg in "${PACKAGES[@]}"; do
         echo "Stowing $pkg..."
-        stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles "$pkg"
+        stow -R -d "$DOTFILES_DIR" -t "$HOME" --no-folding --dotfiles "$pkg"
     done
     echo "Done stowing packages."
     echo "Run: source ~/.zshrc"
