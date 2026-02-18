@@ -39,7 +39,6 @@ return {
         vim.keymap.set("n", "<leader>jbc", cmd.bookmark_create, { desc = "JJ bookmark create" })
         vim.keymap.set("n", "<leader>jbd", cmd.bookmark_delete, { desc = "JJ bookmark delete" })
         vim.keymap.set("n", "<leader>jbm", cmd.bookmark_move, { desc = "JJ bookmark move" })
-        vim.keymap.set("n", "<leader>jbs", cmd.bookmark_set, { desc = "JJ bookmark set" })
         vim.keymap.set("n", "<leader>ja", cmd.abandon, { desc = "JJ abandon" })
         vim.keymap.set("n", "<leader>jf", cmd.fetch, { desc = "JJ fetch" })
         vim.keymap.set("n", "<leader>jp", cmd.push, { desc = "JJ push" })
