@@ -44,3 +44,26 @@ auto-track-bookmarks = '''
 # # First bookmark or head after current position
 # 'nextbookmark' = 'roots(@:: & bookmarksandheads)'
 
+[aliases]
+track-remote = ["util", "exec", "--", "bash", "-c", "git fetch-branch \"$1\" && jj bookmark track \"$1\" --remote=origin", "--"]
+review = ["util", "exec", "--", "bash", "-c", """
+    set -e
+    branch=\"$1\"
+    echo \"Tracking remote branch: $branch\"
+    jj track-remote \"$branch\"
+    echo \"Fetching trunk...\"
+    trunk_branch=$(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
+    if [ -n \"$trunk_branch\" ]; then
+        jj git fetch --remote origin --branch \"$trunk_branch\"
+    else
+        echo \"Warning: Could not determine trunk branch, fetching main/master/trunk\"
+        jj git fetch --remote origin --branch main --branch master --branch trunk 2>/dev/null || true
+    fi
+    echo \"Finding common ancestor and creating new commit...\"
+    jj new \"latest(ancestors($branch) & ancestors(trunk()))\"
+    echo \"Restoring files from $branch...\"
+    jj restore --from \"$branch\"
+    echo \"Forgetting remote branch reference...\"
+    git forget-branch \"$branch\"
+    echo \"Review setup complete!\"
+""", "--"]

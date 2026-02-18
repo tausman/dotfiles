@@ -18,6 +18,7 @@ return {
 
         -- Core commands
         local cmd = require("jj.cmd")
+        vim.keymap.set("n", "<leader>gd", cmd.diff, { desc = "JJ describe" })
         vim.keymap.set("n", "<leader>jd", function()
             -- Get current and parent commit hashes
             local current_commit = vim.fn.system("jj log -r @ -T commit_id --no-graph"):gsub("%s+$", "")
@@ -38,6 +39,7 @@ return {
         vim.keymap.set("n", "<leader>jbc", cmd.bookmark_create, { desc = "JJ bookmark create" })
         vim.keymap.set("n", "<leader>jbd", cmd.bookmark_delete, { desc = "JJ bookmark delete" })
         vim.keymap.set("n", "<leader>jbm", cmd.bookmark_move, { desc = "JJ bookmark move" })
+        vim.keymap.set("n", "<leader>jbs", cmd.bookmark_set, { desc = "JJ bookmark set" })
         vim.keymap.set("n", "<leader>ja", cmd.abandon, { desc = "JJ abandon" })
         vim.keymap.set("n", "<leader>jf", cmd.fetch, { desc = "JJ fetch" })
         vim.keymap.set("n", "<leader>jp", cmd.push, { desc = "JJ push" })
@@ -86,5 +88,25 @@ return {
                 vim.notify("Not in a codediff buffer", vim.log.levels.WARN)
             end
         end, { desc = "JJ open file from codediff" })
+
+        -- Open file from codediff buffer in new tab
+        vim.keymap.set("n", "<leader>gF", function()
+            local bufname = vim.api.nvim_buf_get_name(0)
+
+            if bufname:match("^codediff:///") then
+                -- Format: codediff:////repo_root///commit_hash/relative_path
+                local repo_root, relative_path = bufname:match("^codediff:///(/[^/]+/.-)///[^/]+/(.+)$")
+                if repo_root and relative_path then
+                    local file_path = repo_root .. "/" .. relative_path
+                    local line_num = vim.api.nvim_win_get_cursor(0)[1]
+
+                    vim.cmd("tabnew +" .. line_num .. " " .. vim.fn.fnameescape(file_path))
+                else
+                    vim.notify("Could not parse codediff buffer name", vim.log.levels.ERROR)
+                end
+            else
+                vim.notify("Not in a codediff buffer", vim.log.levels.WARN)
+            end
+        end, { desc = "JJ open file from codediff in new tab" })
     end,
 }
