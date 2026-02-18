@@ -18,7 +18,15 @@ return {
 
         -- Core commands
         local cmd = require("jj.cmd")
-        vim.keymap.set("n", "<leader>jd", cmd.diff, { desc = "JJ diff" })
+        vim.keymap.set("n", "<leader>jd", function()
+            -- Get current and parent commit hashes
+            local current_commit = vim.fn.system("jj log -r @ -T commit_id --no-graph"):gsub("%s+$", "")
+            local parent_commit = vim.fn.system("jj log -r @- -T commit_id --no-graph"):gsub("%s+$", "")
+
+            -- Call codediff with explicit revisions
+            cmd.diff({ from = parent_commit, to = current_commit })
+        end, { desc = "JJ diff @ vs @-" })
+        vim.keymap.set("n", "<leader>jD", cmd.describe, { desc = "JJ describe" })
         vim.keymap.set("n", "<leader>jl", cmd.log, { desc = "JJ log" })
         vim.keymap.set("n", "<leader>je", cmd.edit, { desc = "JJ edit" })
         vim.keymap.set("n", "<leader>jn", cmd.new, { desc = "JJ new" })
