@@ -36,7 +36,8 @@ local function get_repo_name()
             local git_dir = vim.fn.resolve(repo_path .. "/store/" .. git_target)
 
             -- Get the remote URL
-            local remote_url = vim.fn.systemlist("git --git-dir=" .. vim.fn.shellescape(git_dir) .. " remote get-url origin 2>/dev/null")[1]
+            local remote_url = vim.fn.systemlist("git --git-dir=" ..
+                vim.fn.shellescape(git_dir) .. " remote get-url origin 2>/dev/null")[1]
             if remote_url and remote_url ~= "" then
                 -- Extract repo name from URL (e.g., git@github.com:DataDog/dd-go.git -> dd-go)
                 local repo = remote_url:match("/([^/]+)%.git$") or remote_url:match(":([^/:]+)%.git$")
