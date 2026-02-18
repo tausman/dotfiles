@@ -2,6 +2,7 @@ require("tausman.set")
 require("tausman.remap")
 require("tausman.lazy_init")
 require("tausman.custom_commands")
+require("tausman.project_configs")
 
 -- Set up some basic autocommands
 
