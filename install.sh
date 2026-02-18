@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run order: init -> move_originals -> stow -> base -> web-ui -> dogweb
+# Run order: init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -64,7 +64,7 @@ setup_base() {
 
     # core tools
     sudo apt remove -y tmux
-    brew install neovim fzf tmux go
+    brew install neovim fzf tmux go jj
     # Symlink tmux into ~/.local/bin so tmux's run-shell subprocesses can find it
     # (they inherit tmux's global PATH, which doesn't include the Linuxbrew prefix)
     ln -sf /home/linuxbrew/.linuxbrew/bin/tmux ~/.local/bin/tmux
@@ -115,6 +115,48 @@ EOF
     echo "Run: source ~/.zshrc"
 }
 
+setup_repos() {
+    echo "Setting up repo fetch configs..."
+    local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui)
+
+    for repo in "${repos[@]}"; do
+        if [ ! -d "$repo/.git" ]; then
+            echo "Skipping $repo (not a git repo)"
+            continue
+        fi
+
+        echo "Configuring $repo..."
+        cd "$repo"
+
+        # Detect default branch from remote
+        local default_branch
+        default_branch=$(git ls-remote --symref origin HEAD | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2}')
+
+        if [ -z "$default_branch" ]; then
+            echo "  Could not determine default branch, skipping"
+            continue
+        fi
+        echo "  Default branch: $default_branch"
+
+        # Remove all existing remote tracking refs
+        git symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true
+        git for-each-ref --format='delete %(refname)' refs/remotes/origin/ | git update-ref --stdin 2>/dev/null || true
+
+        # Configure fetch to only track default branch and tausman/* branches
+        git config remote.origin.fetch "+refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
+        git config --add remote.origin.fetch '+refs/heads/tausman*:refs/remotes/origin/tausman*'
+
+        # Fetch configured refs
+        git fetch origin
+
+        # Colocate jj
+        jj git init --colocate
+
+        echo "  Done."
+    done
+    echo "Repo setup complete."
+}
+
 setup_dogweb() {
     echo "Setting up dogweb..."
     cd ~/dd/dogweb
@@ -130,6 +172,7 @@ run_all() {
     move_originals
     stow_packages
     setup_base
+    setup_repos
     setup_web_ui
     setup_dogweb
     echo "Run: source ~/.zshrc"
@@ -146,7 +189,8 @@ case "${1:-stow}" in
     move-originals) move_originals ;;
     stow)           stow_packages ;;
     base)           setup_base ;;
+    repos)          setup_repos ;;
     web-ui)         setup_web_ui ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|init|move-originals|stow|base|web-ui|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|dogweb}" && exit 1 ;;
 esac
