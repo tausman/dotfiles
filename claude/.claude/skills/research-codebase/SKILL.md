@@ -29,9 +29,44 @@ Conduct comprehensive codebase research using parallel sub-agents.
   - Include file paths and line numbers for all references
   - Highlight patterns, architectural decisions, and design rationale
 5. **Generate research document**
-  - Output path: `./YYYY-MM-DD-<description>.md`
-  - Use template from `~/assets/research-template.md`
+  - Output naming:
+    - If a ticket ID is provided: `./research-<TICKET>.md` (e.g., `research-CRED-2174.md`)
+    - Otherwise: `./YYYY-MM-DD-<description>.md`
   - Add GitHub permalinks if on main branch or pushed to remote
+  - Use the following output structure:
+
+## Output Format
+
+```markdown
+# Research: <Title>
+
+## Summary
+[1-2 paragraph executive summary of findings]
+
+## System Overview
+[High-level description of the system/component under investigation]
+
+### Key Components
+- **Component Name** - Description (`path/to/file:line`)
+
+### Architecture / Data Flow
+[How components interact, request/data flows, sequence of operations]
+
+## Deep Dive: <Area 1>
+[Detailed findings with file:line references]
+
+## Deep Dive: <Area 2>
+[Detailed findings with file:line references]
+
+## Patterns & Conventions
+- [Pattern observed with examples and file references]
+
+## Open Questions
+- [Anything unresolved or needing further investigation]
+
+## References
+- [Links to relevant code, docs, tickets]
+```
 6. **Present findings to user**
   - Summarize key discoveries
   - Highlight anything surprising or noteworthy

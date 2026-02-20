@@ -13,24 +13,26 @@ Execute implementation plans phase by phase with automated verification at each 
 
 - Ask for path if not provided
 - Read complete plan, extract phases, success criteria, dependencies
-- Verify prerequisites: `git status`, `git log -1`, pre-flight checks
+- Verify prerequisites: `jj status`, `jj log`, pre-flight checks
 - Note any assumptions or prerequisites mentioned in the plan
 
-### 2. Create Worktrees for all the repos involved in this plan
+### 2. Initialize Progress Tracking
 
-#### If plan has not started to be implemented yet:
-- Create a worktree from the base repository like so:
-`repo_name`: name of the base repository (ie: `dd-go`, `dd-source`, `dogweb`, etc.)
-`directory-name`: jira ticket prefixed short description of work being done (ie: `cred-2161-audit-trail-pat-support`)
-```bash
-git worktree add ~/worktrees/<repo_name>/<directory-name> -b tausman/<directory-name>
+- If a ticket ID is associated with the plan, create `progress-<TICKET>.md`
+- Otherwise create `progress-<plan-name>.md`
+- Track: phase status, notes, issues encountered, blockers
+
+```markdown
+# Progress: <Ticket/Feature>
+
+| Phase | Status | Commit | Notes |
+|-------|--------|--------|-------|
+| 1. <Name> | pending | - | - |
+| 2. <Name> | pending | - | - |
+
+## Log
+- [YYYY-MM-DD HH:MM] Started implementation
 ```
-
-#### If plan has already started to be implemented:
-- Find the necessary worktrees in the expected directories by searching for the jira ticket
-- If you cannot find the directories STOP and ask before proceeding further.
-
-***important***: All of your work will be done in these worktrees -- not in the main repository
 
 ### 3. Execute Each Phase
 
@@ -41,18 +43,24 @@ For each phase:
 - Reference specific file:line numbers from plan
 - Follow existing code patterns
 - Update the plan as a phase is being completed
-- Ensure all prior & new tests are passing before making a commit
-- Make a single commit for the phase with a descriptive message
+- Ensure all prior & new tests are passing before committing
 
+**Commit with jj** (see `/jj-workflow` for full reference):
+```bash
+jj describe -m "Phase N: <descriptive message>
 
-Example commit message:
+- <specific change 1>
+- <specific change 2>
+- Ref: ./<plan-file>.md"
 ```
-Phase 1: Add configuration validation layer
 
-- Implement ConfigValidator class (config/validator.ts)
-- Add unit tests for validation rules
-- Ref: ./2025-12-23-config-refactor.md
+Then start a fresh working commit:
+```bash
+jj new
 ```
+
+**Editing a previous phase's commit:**
+If you discover a fix or improvement that belongs in an earlier phase, use `jj edit <change-id>` to go back, make the change, then return to the top of the stack. **Always check `jj log` for conflicts in all descendant commits afterward and resolve every one before continuing.** See `/jj-workflow` for the full edit and conflict resolution flow.
 
 **Verify automatically:**
 ```bash
@@ -72,12 +80,17 @@ Phase 1: Add configuration validation layer
 - Test each scenario in success criteria
 - Verify edge cases and error handling
 
+**Update progress doc:**
+- Mark phase status (complete/blocked/issues)
+- Record commit change-id
+- Note any deviations or discoveries
+
 ### 4. Phase Gate
 
 After success criteria met:
 
 ```
-✓ Phase [N]: [Phase Name]
+Phase [N]: [Phase Name] - COMPLETE
 
 Implemented:
 - [specific changes made]
@@ -87,41 +100,82 @@ Verification Results:
 - Automated checks: All passing
 - Manual verification: Complete
 
-Commits: [hash(es)]
+Change-id: [jj change-id]
 
 Proceed to Phase [N+1]? (waiting for confirmation)
 ```
 
 **Wait for explicit user confirmation before proceeding.**
-**Ensure the phase is marked as complete in the plan**
+**Ensure the phase is marked as complete in both the plan and progress doc.**
 
-### 5. Final Verification
+### 5. Handle Multi-Repo Dependencies
+
+If a phase depends on a CI build artifact or deployment from another repo:
+
+1. **Stop implementation** at that phase boundary
+2. **Update progress doc** with the blocker:
+   ```markdown
+   ## Blockers
+   - [YYYY-MM-DD HH:MM] Phase N blocked: waiting for <repo> CI to build <artifact>
+     - PR/commit: <link>
+     - Expected artifact: <description>
+     - Resume: once <condition> is met, continue with Phase N
+   ```
+3. **Explain the blocker** to the user with clear next steps
+4. Do NOT attempt to work around the dependency
+
+### 6. Plan Amendment Protocol
+
+If the plan needs changes during implementation:
+
+1. **Stop and explain** what was discovered and why the plan needs to change
+2. **Get user approval** for the amendment
+3. **Update the plan doc** with an amendment entry:
+   ```markdown
+   ## Amendments
+
+   ### [YYYY-MM-DD HH:MM] - <Short Description>
+   **Phase affected:** Phase N
+   **What changed:** [Description]
+   **Why:** [What was discovered during implementation]
+   **Impact:** [Effect on subsequent phases]
+   ```
+4. **Update progress doc** to reflect the amended plan
+5. Continue implementation with the revised plan
+
+### 7. Final Verification
 
 After all phases:
 
 1. **Run full validation suite** - All automated checks one more time
 2. **End-to-end testing** - Verify complete feature works
-3. **Document completion**:
+3. **Update progress doc** with final status
+4. **Document completion**:
 
 ```
-✅ Implementation Complete: [Feature Name]
+Implementation Complete: [Feature Name]
 
 Plan: ./[filename]
+Progress: ./[progress-filename]
 
 Phases Executed:
-- Phase 1: [Name] ✓ [commit hash]
-- Phase 2: [Name] ✓ [commit hash]
+- Phase 1: [Name] - complete [change-id]
+- Phase 2: [Name] - complete [change-id]
 
 Success Criteria Verified:
 - Automated: All passing
 - Manual: All verified
 
 Files modified: [count]
-Commits: [count] | Branch: [name]
+Commits: [count] | Bookmark: [name]
 
 Next Steps:
 - [Follow-up items]
 ```
+
+5. **Create PR** - Ask the user if they want to open a PR. If yes:
+   - **Multiple bookmarks** (phases split across branches): invoke `/create-pr-stack` with the ordered list of bookmarks. Each PR targets the previous bookmark as its base.
+   - **Single bookmark**: invoke `/create-pr` for a single draft PR.
 
 ## Handling Issues
 
@@ -148,4 +202,6 @@ Next Steps:
 - **Verify automatically first** - Then manual testing
 - **Explicit confirmation between phases** - Never auto-advance
 - **Document issues immediately** - Don't let problems accumulate
-
+- **Use jj for all VCS operations** - See `/jj-workflow` for complete reference. `jj describe`, `jj new`, `jj status`, `jj diff`, `jj log`
+- **Keep a clean linear stack** - Phases are consecutive commits. Editing earlier commits is fine but resolve all conflicts in the full stack before continuing.
+- **Track progress** - Keep the progress doc current throughout implementation

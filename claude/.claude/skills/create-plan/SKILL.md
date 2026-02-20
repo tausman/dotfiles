@@ -5,11 +5,18 @@ description: Create detailed implementation plans with thorough research and ite
 
 # Create Implementation Plan (Generic)
 
+## Input
+
+- **Research document** (optional): If a research doc exists (e.g., `research-<TICKET>.md` or `YYYY-MM-DD-*.md`), read it fully as foundational context before planning
+- **Ticket context** (optional): Ticket ID, description, acceptance criteria
+- **User direction** (optional): Implementation preferences, constraints, approach guidance
+
 ## Workflow
 
 ### 1. Understand the Requirement
 
 - Read all mentioned files completely (no partial reads)
+- If a research document was provided, use it as primary context
 - Present your informed understanding with specific file:line references
 - Ask focused questions only about what research couldn't clarify
 - Don't ask questions answerable through code exploration
@@ -60,7 +67,9 @@ Get explicit user buy-in before investing in detailed planning.
 
 ### 6. Write the Plan
 
-Save to: `./YYYY-MM-DD-plan.md`
+Save to:
+- If a ticket ID is provided: `./plan-<TICKET>.md` (e.g., `plan-CRED-2174.md`)
+- Otherwise: `./YYYY-MM-DD-plan.md`
 
 **Structure:**
 - **Overview** - Brief goal description
@@ -106,4 +115,20 @@ Document current state → Incremental changes → Maintain backwards compatibil
 
 **API Changes:**
 Document current behavior → Deprecation plan → New implementation → Migration guide → Old code removal
+
+## Plan Amendments
+
+When a plan is modified during implementation, append amendments to the plan doc:
+
+```markdown
+## Amendments
+
+### [YYYY-MM-DD HH:MM] - <Short Description>
+**Phase affected:** Phase N
+**What changed:** [Description of the change]
+**Why:** [Rationale - what was discovered during implementation]
+**Impact:** [How this affects subsequent phases, if at all]
+```
+
+This keeps a clear audit trail of plan evolution without losing the original intent.
 
