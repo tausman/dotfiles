@@ -68,7 +68,13 @@ setup_base() {
     # Symlink tmux into ~/.local/bin so tmux's run-shell subprocesses can find it
     # (they inherit tmux's global PATH, which doesn't include the Linuxbrew prefix)
     ln -sf /home/linuxbrew/.linuxbrew/bin/tmux ~/.local/bin/tmux
-    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    if [ ! -d ~/.tmux/plugins/tpm ]; then
+        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    fi
+    # Install TPM plugins headlessly
+    tmux new-session -d -s tpm_install 2>/dev/null || true
+    ~/.tmux/plugins/tpm/bin/install_plugins
+    tmux kill-session -t tpm_install 2>/dev/null || true
 
     # go tools
     go install github.com/golang/mock/mockgen@v1.6.0
