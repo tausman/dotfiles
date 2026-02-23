@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tmux run-shell:*)",
+      "Bash(tmux show-options:*)",
+      "Bash(bash -c:*)",
+      "Bash(bash /home/bits/.local/bin/tmux-sessionizer)",
+      "Bash(echo:*)",
+      "Bash(tmux capture-pane:*)",
+      "Bash(stow:*)"
+    ]
+  }
+}

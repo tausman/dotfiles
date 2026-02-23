@@ -17,6 +17,7 @@ PACKAGES=(
 move_originals() {
     echo "Moving original files..."
     [ -f ~/.zshrc ] && mv ~/.zshrc ~/.zshrc_original
+    [ -f ~/.zshenv ] && mv ~/.zshenv ~/.zshenv_original
     [ -f ~/.claude/settings.json ] && mv ~/.claude/settings.json ~/.claude/settings_original.json
     [ -f ~/.gitconfig ] && mv ~/.gitconfig ~/.gitconfig_original
     [ -f ~/.tmux.conf ] && mv ~/.tmux.conf ~/.tmux_original.conf
@@ -42,8 +43,8 @@ init() {
     echo "initializing..."
     # Install linuxbrew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    echo >> ~/.zshrc
-    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> ~/.zshrc
+    echo >> ~/.zshenv
+    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> ~/.zshenv
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
     # github config

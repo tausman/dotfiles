@@ -160,21 +160,8 @@ export MANPAGER="nvim +Man!"
 # Add full filepath to commandline prompt
 PROMPT=$(echo $PROMPT | sed 's/%c%/%~%/')
 
-# BEGIN ANSIBLE MANAGED BLOCK
-# Load homebrew shell variables
-# Force certain more-secure behaviours from homebrew
-export HOMEBREW_NO_INSECURE_REDIRECT=1
-export HOMEBREW_CASK_OPTS=--require-sha
-
-if [[ "$(uname)" == "Darwin" ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-    export HOMEBREW_DIR=/opt/homebrew
-    export HOMEBREW_BIN=/opt/homebrew/bin
-elif [[ "$(uname)" == "Linux" ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
-    export HOMEBREW_DIR=/home/linuxbrew/.linuxbrew
-    export HOMEBREW_BIN=/home/linuxbrew/.linuxbrew/bin
-fi
+# Homebrew shell variables are loaded in .zshenv so that
+# non-interactive shells (e.g. tmux run-shell) also have brew on PATH
 
 # if [[ "$(uname)" == "Darwin" ]]; then
 #     # Load python shims
@@ -226,7 +213,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     # export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
     # export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
     # export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
-    export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
+    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
 elif [[ "$(uname)" == "Linux" ]]; then
     # export GITLAB_TOKEN=$(pass show gitlab_token)
     # export OPENAI_API_KEY=$(pass show openai_api_key)
