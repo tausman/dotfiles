@@ -120,11 +120,34 @@ alias jpush='jj git push'
 alias jpushd='jj git push --deleted'
 alias jinit='jj git init --git-repo .'
 jpr() {
-    local title=$(jj log -r @ --no-graph -T 'description.first_line()')
-    local head=$(jj log -r @ -T 'bookmarks' --no-graph | tr -d '*\n')
-    # Find nearest ancestor with a bookmark
-    local default_base=$(jj log -r 'latest(ancestors(@-) & bookmarks())' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
-    # Put default at top, then rest (excluding default to avoid dupe)
+    local head="$1"
+
+    if [[ -z "$head" ]]; then
+        # No argument: use bookmark on current commit
+        head=$(jj log -r @ -T 'bookmarks' --no-graph 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
+        if [[ -z "$head" ]]; then
+            echo "error: no bookmark on current commit and none specified" >&2
+            return 1
+        fi
+    else
+        # Validate the bookmark exists
+        if ! jj bookmark list 2>/dev/null | grep -q "^${head}:"; then
+            echo "error: bookmark '$head' does not exist" >&2
+            return 1
+        fi
+    fi
+
+    # Try to get existing PR URL
+    local url
+    url=$(GH_PAGER= gh pr view "$head" --json url -q .url 2>/dev/null)
+    if [[ -n "$url" ]]; then
+        echo "$url"
+        return 0
+    fi
+
+    # No PR yet -- create one
+    local title=$(jj log -r "$head" --no-graph -T 'description.first_line()')
+    local default_base=$(jj log -r "latest(ancestors(${head}-) & bookmarks())" --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
     local base=$(_jj_colored_bookmarks | awk -v def="$default_base" 'BEGIN{print def} $0!=def && $0!~"^"def" \\*$"{print}' | fzf --ansi --header="Select base bookmark (default: $default_base)")
     base=${base% \*}  # strip current marker
     [[ -z "$base" ]] && return 1
