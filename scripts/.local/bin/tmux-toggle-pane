@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Toggle a named pane in/out of the main window (window 1).
+# Usage: tmux-toggle-pane <name>
+
+TARGET="$1"
+MAIN_WINDOW="1"
+
+if [ -z "$TARGET" ]; then
+  echo "Usage: tmux-toggle-pane <name>" >&2
+  exit 1
+fi
+
+pane_count=$(tmux list-panes -t ":${MAIN_WINDOW}" 2>/dev/null | wc -l | tr -d ' ')
+
+target_window_exists() {
+  tmux list-windows -F '#{window_name}' | grep -qx "$TARGET"
+}
+
+get_side_pane_name() {
+  tmux display-message -t ":${MAIN_WINDOW}.2" -p '#{@pane_name}' 2>/dev/null
+}
+
+# If there's already a side pane, handle it first
+if [ "$pane_count" -ge 2 ]; then
+  current_name=$(get_side_pane_name)
+
+  # Target is already the side pane -- toggle it out and done
+  if [ "$current_name" = "$TARGET" ]; then
+    tmux break-pane -d -s "${MAIN_WINDOW}.2" -n "$TARGET"
+    exit 0
+  fi
+
+  # Break the current side pane out, preserving its name
+  if [ -n "$current_name" ]; then
+    tmux break-pane -d -s "${MAIN_WINDOW}.2" -n "$current_name"
+  else
+    tmux break-pane -d -s "${MAIN_WINDOW}.2"
+  fi
+fi
+
+# Join the target window as a side pane if it exists
+if target_window_exists; then
+  tmux join-pane -h -s ":${TARGET}" -t ":${MAIN_WINDOW}"
+  tmux set-option -p -t ":${MAIN_WINDOW}.2" @pane_name "$TARGET"
+fi

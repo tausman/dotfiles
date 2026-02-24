@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Bootstrap the current tmux session with standard windows: nvim, testing, claude, jj
+# Kills all existing windows and replaces them.
+
+SESSION=$(tmux display-message -p '#{session_name}')
+DIR=$(tmux display-message -p '#{pane_current_path}')
+
+WINDOWS=("nvim" "testing" "claude" "jj")
+
+# Record existing window IDs so we can kill them after
+OLD_IDS=$(tmux list-windows -t "$SESSION" -F '#{window_id}')
+
+# Create the new windows
+for name in "${WINDOWS[@]}"; do
+  tmux new-window -t "$SESSION" -n "$name" -c "$DIR"
+done
+
+# Kill all the old windows
+for wid in $OLD_IDS; do
+  tmux kill-window -t "$wid" 2>/dev/null
+done
+
+# Reorder: 1=nvim, 2=testing, 3=claude, 4=jj
+idx=1
+for name in "${WINDOWS[@]}"; do
+  tmux move-window -s "$SESSION:$name" -t "$SESSION:$idx" 2>/dev/null
+  idx=$((idx + 1))
+done
+
+# Select window 1 (nvim)
+tmux select-window -t "$SESSION:1"
