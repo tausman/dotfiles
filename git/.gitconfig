@@ -45,5 +45,5 @@
 [fetch]
     prune = true
 [alias]
-	fetch-branch = "!f() { git fetch origin \"$1:refs/remotes/origin/$1\"; }; f"
-	forget-branch = "!f() { git update-ref -d \"refs/remotes/origin/$1\"; }; f"
+	track-branch = "!f() { git config --add remote.origin.fetch \"+refs/heads/$1:refs/remotes/origin/$1\" && git fetch origin \"$1:refs/remotes/origin/$1\"; }; f"
+	untrack-branch = "!f() { git config --unset remote.origin.fetch \"\\+refs/heads/$1:refs/remotes/origin/$1\" && git update-ref -d \"refs/remotes/origin/$1\"; }; f"
