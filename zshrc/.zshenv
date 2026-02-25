@@ -4,6 +4,8 @@
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
 
+export NNN_PLUG='z:fzcd;o:fzopen;f:fzfopen'
+
 # Load homebrew shell variables
 # Force certain more-secure behaviours from homebrew
 export HOMEBREW_NO_INSECURE_REDIRECT=1
