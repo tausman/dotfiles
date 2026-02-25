@@ -46,6 +46,7 @@ auto-track-bookmarks = '''
 
 [aliases]
 track-remote = ["util", "exec", "--", "bash", "-c", "git fetch-branch \"$1\" && jj bookmark track \"$1\" --remote=origin", "--"]
+dangling-commits = ["log", "-r", "immutable_heads().. & ~bookmarks(glob:\"tausman/*\") & ~@"]
 review = ["util", "exec", "--", "bash", "-c", """
     set -e
     branch=\"$1\"
