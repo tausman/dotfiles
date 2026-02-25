@@ -65,7 +65,7 @@ setup_base() {
 
     # core tools
     sudo apt remove -y tmux
-    brew install neovim fzf tmux go jj ripgrep nnn
+    brew install neovim fzf tmux go jj ripgrep nnn jjui
     # Symlink tmux into ~/.local/bin so tmux's run-shell subprocesses can find it
     # (they inherit tmux's global PATH, which doesn't include the Linuxbrew prefix)
     ln -sf /home/linuxbrew/.linuxbrew/bin/tmux ~/.local/bin/tmux
