@@ -45,13 +45,24 @@ auto-track-bookmarks = '''
 # 'nextbookmark' = 'roots(@:: & bookmarksandheads)'
 
 [aliases]
-track-remote = ["util", "exec", "--", "bash", "-c", "git fetch-branch \"$1\" && jj bookmark track \"$1\" --remote=origin", "--"]
 dangling-commits = ["log", "-r", "immutable_heads().. & ~bookmarks(glob:\"tausman/*\") & ~@"]
+track-branch = ["util", "exec", "--", "bash", "-c", """
+    set -e
+    branch=\"$1\"
+    git track-branch \"$branch\"
+    jj bookmark track \"$branch\" --remote=origin
+""", "--"]
+untrack-branch = ["util", "exec", "--", "bash", "-c", """
+    set -e
+    branch=\"$1\"
+    git untrack-branch \"$branch\"
+""", "--"]
 review = ["util", "exec", "--", "bash", "-c", """
     set -e
     branch=\"$1\"
-    echo \"Tracking remote branch: $branch\"
-    jj track-remote \"$branch\"
+    echo \"Fetching remote branch: $branch\"
+    git track-branch \"$branch\"
+    jj bookmark track \"$branch\" --remote=origin
     echo \"Fetching trunk...\"
     trunk_branch=$(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null | tr -d '*\n' | cut -d'@' -f1)
     if [ -n \"$trunk_branch\" ]; then
@@ -65,6 +76,6 @@ review = ["util", "exec", "--", "bash", "-c", """
     echo \"Restoring files from $branch...\"
     jj restore --from \"$branch\"
     echo \"Forgetting remote branch reference...\"
-    git forget-branch \"$branch\"
+    git untrack-branch \"$branch\"
     echo \"Review setup complete!\"
 """, "--"]
