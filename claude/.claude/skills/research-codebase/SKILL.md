@@ -29,9 +29,11 @@ Conduct comprehensive codebase research using parallel sub-agents.
   - Include file paths and line numbers for all references
   - Highlight patterns, architectural decisions, and design rationale
 5. **Generate research document**
-  - Output naming:
-    - If a ticket ID is provided: `./research-<TICKET>.md` (e.g., `research-CRED-2174.md`)
-    - Otherwise: `./YYYY-MM-DD-<description>.md`
+  - Output location:
+    - If a ticket ID is provided: `~/artifacts/<TICKET>/research-<TICKET>.md` (e.g., `~/artifacts/CRED-2174/research-CRED-2174.md`)
+    - Otherwise: `~/artifacts/misc/<short-description>/research-<short-description>.md`
+    - Create the directory if it doesn't exist
+    - User can override the output path explicitly
   - Add GitHub permalinks if on main branch or pushed to remote
   - Use the following output structure:
 

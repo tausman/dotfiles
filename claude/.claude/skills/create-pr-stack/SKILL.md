@@ -138,6 +138,8 @@ EOF
 
 Format for the PR Stack section:
 
+**Single-repo stack:**
+
 ```markdown
 ## PR Stack
 - **#<num> <title>** (this PR)
@@ -145,11 +147,28 @@ Format for the PR Stack section:
 - #<num> <title>
 ```
 
+**Cross-repo stack** (when this stack is part of a multi-repo effort):
+
+```markdown
+## PR Stack
+
+### this-repo
+- **#101 CRED-2174 Add proto definitions** (this PR)
+- #102 CRED-2174 Add DB layer
+
+### other-repo
+- [other-repo#45](https://github.com/org/other-repo/pull/45) CRED-2174 Add client integration
+- [other-repo#46](https://github.com/org/other-repo/pull/46) CRED-2174 Add cleanup job
+```
+
 Rules:
-- List PRs in stack order (base to top)
+- List PRs in stack order (base to top) within each repo
 - Bold the current PR and mark it with `(this PR)`
-- Use `#<number>` shorthand -- GitHub auto-links these
+- **Same repo**: use `#<number>` shorthand
+- **Cross repo**: use full markdown link `[repo#num](URL)`
+- Group by repo name using `###` subsections when multiple repos are involved
 - Every PR in the stack gets this section
+- If cross-repo PRs are provided (e.g., by `/ticket-worker`), include them in every PR's stack section
 
 ### 6. Report
 

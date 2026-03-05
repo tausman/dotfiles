@@ -68,8 +68,10 @@ Get explicit user buy-in before investing in detailed planning.
 ### 6. Write the Plan
 
 Save to:
-- If a ticket ID is provided: `./plan-<TICKET>.md` (e.g., `plan-CRED-2174.md`)
-- Otherwise: `./YYYY-MM-DD-plan.md`
+- If a ticket ID is provided: `~/artifacts/<TICKET>/plan-<TICKET>.md` (e.g., `~/artifacts/CRED-2174/plan-CRED-2174.md`)
+- Otherwise: `~/artifacts/misc/<short-description>/plan-<short-description>.md`
+- Create the directory if it doesn't exist
+- User can override the output path explicitly
 
 **Structure:**
 - **Overview** - Brief goal description
@@ -90,6 +92,42 @@ Save to:
 
 If an exception applies, call it out explicitly in the phase so it is a conscious decision, not an omission.
 
+**Bookmark boundaries (PR boundaries):**
+
+Phases should be grouped into bookmarks. Each bookmark becomes a separate PR. Mark bookmark boundaries explicitly in the plan:
+
+```markdown
+### Phase 1: Add proto definitions
+...
+
+### Phase 2: Implement DB layer
+...
+
+--- BOOKMARK: tausman/<ticket>-proto-and-db ---
+
+### Phase 3: Add gRPC server
+...
+
+### Phase 4: Add authorization
+...
+
+--- BOOKMARK: tausman/<ticket>-grpc-server ---
+```
+
+**When to create a new bookmark boundary:**
+- When a logical unit of work is complete and independently reviewable
+- When subsequent phases represent a distinct concern (e.g., moving from data layer to API layer)
+- When the work so far is a meaningful, self-contained change
+
+**Bookmark boundary success criteria:**
+Every bookmark boundary MUST include these success criteria in the final phase before the boundary:
+- All existing tests pass
+- All new tests for the phases in this bookmark pass
+- Code compiles / type checks / lints cleanly
+- The codebase is in a shippable state (no half-finished work)
+
+These are not optional -- they are embedded in the plan as explicit success criteria for the phase that ends at a bookmark boundary.
+
 **End with:**
 - **Testing Strategy** - Which test types apply (unit, integration, e2e), where test files live, how to run them
 - **References** - Tickets, research, code refs
@@ -107,6 +145,30 @@ If an exception applies, call it out explicitly in the phase so it is a consciou
 - Research before proposing
 - Consider backwards compatibility
 - No open questions - research or ask first
+
+## Multi-Repo Plans
+
+When the work spans multiple repos, the plan must clearly reflect this:
+
+- **Group phases by repo** - Use repo name as a heading, list that repo's phases underneath
+- **Mark cross-repo dependencies** - If a phase in repo B depends on a phase in repo A, state this explicitly (e.g., "depends on repo-a phase 1")
+- **Identify shared artifacts** - Proto definitions, config files, shared libraries that bridge repos
+- **Sequence for correctness** - Upstream repos (protos, shared libs) before downstream consumers
+- **Note which agent handles which repo** - When used with `/ticket-worker`, each repo gets its own agent
+
+Example structure:
+
+```markdown
+## Implementation Phases
+
+### repo-a (upstream)
+1. Add proto definitions
+2. Implement server-side handler
+
+### repo-b (downstream, depends on repo-a phase 1)
+3. Generate client stubs from new protos
+4. Integrate client into service
+```
 
 ## Common Implementation Patterns
 

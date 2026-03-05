@@ -18,17 +18,21 @@ Execute implementation plans phase by phase with automated verification at each 
 
 ### 2. Initialize Progress Tracking
 
-- If a ticket ID is associated with the plan, create `progress-<TICKET>.md`
-- Otherwise create `progress-<plan-name>.md`
+- If a ticket ID is associated with the plan, create `~/artifacts/<TICKET>/progress-<TICKET>.md`
+- Otherwise create `~/artifacts/misc/<short-description>/progress-<short-description>.md`
+- Create the directory if it doesn't exist
+- User can override the output path explicitly
 - Track: phase status, notes, issues encountered, blockers
 
 ```markdown
 # Progress: <Ticket/Feature>
 
-| Phase | Status | Commit | Notes |
-|-------|--------|--------|-------|
-| 1. <Name> | pending | - | - |
-| 2. <Name> | pending | - | - |
+| Phase | Status | Commit | Bookmark | Notes |
+|-------|--------|--------|----------|-------|
+| 1. <Name> | pending | - | - | - |
+| 2. <Name> | pending | - | tausman/<ticket>-<desc> | bookmark boundary |
+| 3. <Name> | pending | - | - | - |
+| 4. <Name> | pending | - | tausman/<ticket>-<desc2> | bookmark boundary |
 
 ## Log
 - [YYYY-MM-DD HH:MM] Started implementation
@@ -60,6 +64,22 @@ Then start a fresh working commit:
 ```bash
 jj new
 ```
+
+**At bookmark boundaries:**
+
+The plan marks bookmark boundaries (e.g., `--- BOOKMARK: tausman/<ticket>-<desc> ---`). When you reach a phase that ends at a bookmark boundary:
+
+1. **Verify all bookmark boundary success criteria** before proceeding:
+   - All existing tests pass
+   - All new tests for phases in this bookmark pass
+   - Code compiles / type checks / lints cleanly
+   - Codebase is in a shippable state
+2. **Set the bookmark** on the current commit:
+   ```bash
+   jj bookmark set <bookmark-name> -r @-
+   ```
+3. **Record the bookmark** in the progress doc
+4. Continue to the next phase (which starts a new bookmark group)
 
 **Editing a previous phase's commit:**
 If you discover a fix or improvement that belongs in an earlier phase, use `jj edit <change-id>` to go back, make the change, then return to the top of the stack. **Always check `jj log` for conflicts in all descendant commits afterward and resolve every one before continuing.** See `/jj-workflow` for the full edit and conflict resolution flow.
@@ -177,8 +197,9 @@ Next Steps:
 ```
 
 5. **Create PR** - Ask the user if they want to open a PR. If yes:
-   - **Multiple bookmarks** (phases split across branches): invoke `/create-pr-stack` with the ordered list of bookmarks. Each PR targets the previous bookmark as its base.
+   - **Multiple bookmarks**: invoke `/create-pr-stack` with the ordered list of bookmarks from the progress doc. Each PR targets the previous bookmark as its base.
    - **Single bookmark**: invoke `/create-pr` for a single draft PR.
+   - All PRs are always created as drafts.
 
 ## Handling Issues
 
