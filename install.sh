@@ -168,6 +168,14 @@ setup_repos() {
     echo "Repo setup complete."
 }
 
+setup_claude() {
+    echo "Setting up Claude..."
+    claude install
+    claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
+    claude mcp add --scope user --transport http datadog-mcp https://mcp.datadoghq.com/api/unstable/mcp-server/mcp
+    echo "Claude setup complete."
+}
+
 setup_dogweb() {
     echo "Setting up dogweb..."
     cd ~/dd/dogweb
@@ -184,6 +192,7 @@ run_all() {
     stow_packages
     setup_base
     setup_repos
+    setup_claude
     setup_web_ui
     setup_dogweb
     echo "Run: source ~/.zshrc"
@@ -202,6 +211,7 @@ case "${1:-stow}" in
     base)           setup_base ;;
     repos)          setup_repos ;;
     web-ui)         setup_web_ui ;;
+    claude)         setup_claude ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|claude|dogweb}" && exit 1 ;;
 esac

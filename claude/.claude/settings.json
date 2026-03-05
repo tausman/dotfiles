@@ -41,7 +41,7 @@
     ],
     "deny": []
   },
-  "model": "sonnet[1m]",
+  "model": "opus",
   "enabledPlugins": {
     "go-code-reviewer@datadog-claude-plugins": true,
     "python-code-reviewer@datadog-claude-plugins": true,
