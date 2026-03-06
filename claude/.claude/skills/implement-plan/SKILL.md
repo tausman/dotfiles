@@ -43,6 +43,8 @@ For each phase:
 - Reference specific file:line numbers from plan
 - Follow existing code patterns
 - Update the plan as a phase is being completed
+- **Write tests** for the changes in this phase before committing. Check the plan's "Tests to add" section for guidance. If the plan doesn't specify tests, assess what should be covered and write them.
+  - Exception: only skip if (1) no tests exist in the codebase, or (2) adding tests is genuinely impractical — document which exception applies in the progress doc
 - Ensure all prior & new tests are passing before committing
 
 **Commit with jj** (see `/jj-workflow` for full reference):
@@ -98,6 +100,7 @@ Implemented:
 
 Verification Results:
 - Automated checks: All passing
+- Tests added: [list new test cases or note exception with reason]
 - Manual verification: Complete
 
 Change-id: [jj change-id]

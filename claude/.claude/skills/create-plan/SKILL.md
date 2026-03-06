@@ -81,11 +81,17 @@ Save to:
 
 **Per phase:**
 - Overview, changes required (file + specifics), success criteria, confirmation gate
-- Each phase should ensure that all current tests are passing
-- Each phase should have new tests added if necessary
+- **Tests to add** - Explicit list of test cases to write for this phase's changes
+- All prior tests must be passing before the phase is considered complete
+
+**Test requirement rule:** Every phase that adds or modifies behavior MUST include new or updated tests. The only exceptions are:
+1. No existing tests anywhere in the codebase (document this explicitly)
+2. Adding tests is genuinely difficult due to external dependencies or infrastructure constraints (document the specific obstacle and propose a workaround or follow-up task)
+
+If an exception applies, call it out explicitly in the phase so it is a conscious decision, not an omission.
 
 **End with:**
-- **Testing Strategy** - Unit, integration, manual
+- **Testing Strategy** - Which test types apply (unit, integration, e2e), where test files live, how to run them
 - **References** - Tickets, research, code refs
 
 ## Success Criteria Format
