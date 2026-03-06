@@ -8,6 +8,7 @@
 - No emojis unless explicitly requested
 - Concise responses
 - Use vim keybindings conventions when relevant
+- When drafting PR review comment responses, always append `_ai assisted comment_` on a new line at the bottom
 
 ## Dotfiles
 - Located at ~/dotfiles
