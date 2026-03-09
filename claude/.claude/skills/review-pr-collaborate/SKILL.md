@@ -54,21 +54,35 @@ URL: <url>
 
 ### Check if already on the right commit
 
-First, check if the current working copy already contains the PR's changes:
+The user may have already run `jj review <branch>` before invoking this skill. In that case, the current commit won't have the same hash as the PR's head commit -- `jj review` creates a fresh commit with the PR's changes squashed onto the common ancestor with trunk. The key check is whether the **file changes** match, not the commit hash.
+
+To verify, compare the set of changed files in the current commit against the PR's changed files:
 
 ```bash
-# See what branch/bookmark the current commit is on
-jj log
+# Get the list of files changed in the current jj commit
+jj diff --stat
 
-# Check if the PR branch is already available
-jj bookmark list | grep <branch-name>
+# Get the list of files changed in the PR from GitHub
+gh pr view <pr-number> --json files --jq '.files[].path' | sort
+
+# Compare: if the file lists match (or are a close match), the PR is already checked out
 ```
 
-If the current commit already matches the PR changes (same branch or same diff), skip checkout.
+You can also do a quick sanity check on diff size:
+
+```bash
+# Local additions/deletions
+jj diff --stat | tail -1
+
+# PR additions/deletions
+gh pr view <pr-number> --json additions,deletions --jq '"\(.additions) additions, \(.deletions) deletions"'
+```
+
+If the changed files and diff stats align, the PR changes are already checked out -- skip to Phase 3.
 
 ### Use jj review to check out
 
-If not already checked out, use the custom `jj review` alias which:
+If the changes are NOT already checked out, use the custom `jj review` alias which:
 1. Fetches the remote branch
 2. Finds the common ancestor with trunk
 3. Creates a new commit with all the PR's changes squashed into one
@@ -81,10 +95,11 @@ This gives a single commit with the full PR diff, ideal for reviewing.
 
 ### Verify checkout
 
-After checkout, verify:
+After checkout, verify the changes match the PR:
 ```bash
-jj status
+# Compare file lists
 jj diff --stat
+gh pr view <pr-number> --json files --jq '.files[].path' | sort
 ```
 
 Confirm the changed files match what the PR shows.
