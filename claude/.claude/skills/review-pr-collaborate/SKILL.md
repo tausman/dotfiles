@@ -136,10 +136,44 @@ Track these as a numbered list and present them to the user periodically:
 
 ```
 Drafted comments (3):
-1. [src/handler.go:42] Missing error check on db.Query return
-2. [src/handler.go:87] Consider using context.WithTimeout here
-3. [src/config.go:15] This default value should be configurable
+1. [src/handler.go:42] Can we add an error check on the db.Query return? It looks like a failure here would be silently dropped.
+2. [src/handler.go:87] Have we considered using context.WithTimeout here? I have a preference for explicit timeouts on DB calls.
+3. [src/config.go:15] We might want to make this default value configurable -- what do you think?
 ```
+
+### Comment tone
+
+All comments MUST use collaborative, friendly language. The reviewer is a teammate, not a subordinate. Frame feedback as suggestions and shared observations, not commands.
+
+**Critically, match the tone to the reviewer's intent.** Before drafting a comment, understand what the reviewer is trying to communicate:
+
+- **Bug / correctness issue**: The reviewer is confident something is wrong. Use clear, direct language -- but still collaborative. Don't hedge with "what do you think?" when there's a real bug.
+  - "Can we add an error check here? It looks like `db.Query` failures would be silently dropped, which could cause data loss."
+  - "We should handle the nil case here -- this will panic if `config` is unset."
+
+- **Suggestion / improvement**: The reviewer sees a way to make things better but the current code isn't broken. Frame as a suggestion, invite discussion.
+  - "Have we considered using `context.WithTimeout` here? It might be worth adding an explicit timeout on this DB call."
+  - "I'd lean toward extracting this into a helper -- what do you think?"
+
+- **Preference / style nit**: The reviewer has a personal preference or minor style opinion. Be explicit that it's a preference, not a requirement.
+  - "Nit: I have a preference for early returns here, but this is fine either way."
+  - "Minor: we might want to name this `usersByID` for consistency with the rest of the file."
+
+- **Question / clarification**: The reviewer doesn't fully understand something and wants context. Ask genuinely.
+  - "Can you help me understand the reasoning behind this approach? I want to make sure I'm not missing context."
+  - "Is there a reason we're not reusing `validateInput` here?"
+
+**Always avoid directive language regardless of intent:**
+- "Do this" / "Change this to..."
+- "You should..." / "You need to..."
+- "This is wrong" / "This must be..."
+- "Fix this" / "Remove this"
+
+**When drafting from user input**, ask the user to clarify their intent if it's ambiguous. For example:
+- User says: "Tell them to add error handling here" -> Ask: "Is this a bug (errors are silently dropped) or a suggestion (would be nice to have)?" Then draft accordingly.
+- User says: "This function is too long" -> Ask: "Is this blocking (hard to review/maintain) or a nit (preference for smaller functions)?" Then draft accordingly.
+
+If the user's intent is clear from context, draft directly without asking.
 
 ### Comment format
 
@@ -190,13 +224,13 @@ gh api \
       "path": "src/handler.go",
       "line": 42,
       "side": "RIGHT",
-      "body": "Missing error check on db.Query return\n\n_ai assisted comment_"
+      "body": "Can we add an error check on the db.Query return? It looks like a failure here would be silently dropped.\n\n_ai assisted comment_"
     },
     {
       "path": "src/handler.go",
       "line": 87,
       "side": "RIGHT",
-      "body": "Consider using context.WithTimeout here\n\n_ai assisted comment_"
+      "body": "Have we considered using context.WithTimeout here? I have a preference for explicit timeouts on DB calls.\n\n_ai assisted comment_"
     }
   ]
 }
