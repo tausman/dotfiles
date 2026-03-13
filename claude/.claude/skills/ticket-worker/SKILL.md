@@ -27,8 +27,9 @@ Orchestrates the full ticket lifecycle: research, plan, implement.
 
 ### 3. Gather User Direction
 
-Ask the user:
+Only ask if the ticket context is genuinely ambiguous or missing critical information (e.g., no description, unclear which repo). Otherwise, infer from the ticket and proceed.
 
+If you must ask, cover:
 1. **Additional context or research areas** - Anything beyond the ticket to investigate?
 2. **Implementation preferences or constraints** - Specific approach, tech choices, things to avoid?
 3. **Which repos are involved** - Where does the work happen?
@@ -58,7 +59,7 @@ Invoke the research-codebase skill with:
 
 Output: `research-<TICKET>.md` (e.g., `research-CRED-2174.md`)
 
-**After research completes:** Present a summary of findings to the user and confirm ready to proceed to planning.
+**After research completes:** Proceed directly to planning. Do not pause for confirmation.
 
 ### 6. Execute /create-plan
 
@@ -70,7 +71,7 @@ Invoke the create-plan skill with:
 
 Output: `plan-<TICKET>.md` (e.g., `plan-CRED-2174.md`)
 
-**After plan completes:** The plan skill will get user approval on the plan structure before finalizing.
+**After plan completes:** Proceed directly to implementation. Do not pause for approval.
 
 ### 7. Execute /implement-plan
 
@@ -84,7 +85,6 @@ The implement-plan skill handles:
 - Phase-by-phase execution with verification
 - jj commits per phase
 - Progress tracking
-- Phase gates with user confirmation
 - Multi-repo dependency handling
 - Plan amendments if needed
 
@@ -113,7 +113,7 @@ If the workflow is interrupted or blocked at any stage:
 
 ## Key Principles
 
-- **User stays in control** - Confirm before transitions between major phases
+- **Run autonomously** - Execute research, plan, and implement back-to-back without pausing for confirmation. Only stop if genuinely blocked (e.g., MCP unavailable, ambiguous requirements with no reasonable default, multi-repo dependency that can't be inferred).
 - **Artifacts are durable** - All docs use ticket-based naming and persist on disk
 - **Route inputs intelligently** - Research questions to research, plan constraints to planning
 - **Don't skip phases** - Research informs planning, planning informs implementation
