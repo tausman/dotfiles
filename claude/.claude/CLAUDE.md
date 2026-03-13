@@ -8,7 +8,7 @@
 - No emojis unless explicitly requested
 - Concise responses
 - Use vim keybindings conventions when relevant
-- When drafting PR review comment responses, always append `_ai assisted comment_` on a new line at the bottom
+- When drafting PR review comment responses, always append the following on a new line at the bottom: `🤖 Assisted with AI`
 
 ## Dotfiles
 - Located at ~/dotfiles

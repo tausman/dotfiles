@@ -129,7 +129,7 @@ Maintain an internal list of all drafted comments. Each comment has:
 
 - **file_path**: The file the comment is on
 - **line**: The line number in the new version of the file (RIGHT side)
-- **body**: The comment text (MUST end with `\n\n_ai assisted comment_`)
+- **body**: The comment text (MUST end with `\n\n🤖 Assisted with AI`)
 - **comment_url** (optional): If replying to an existing thread, the URL of the comment
 
 Track these as a numbered list and present them to the user periodically:
@@ -180,7 +180,7 @@ If the user's intent is clear from context, draft directly without asking.
 EVERY comment body MUST end with:
 ```
 
-_ai assisted comment_
+🤖 Assisted with AI
 ```
 
 This is a hard requirement -- append it to every comment before posting.
@@ -224,13 +224,13 @@ gh api \
       "path": "src/handler.go",
       "line": 42,
       "side": "RIGHT",
-      "body": "Can we add an error check on the db.Query return? It looks like a failure here would be silently dropped.\n\n_ai assisted comment_"
+      "body": "Can we add an error check on the db.Query return? It looks like a failure here would be silently dropped.\n\n🤖 Assisted with AI"
     },
     {
       "path": "src/handler.go",
       "line": 87,
       "side": "RIGHT",
-      "body": "Have we considered using context.WithTimeout here? I have a preference for explicit timeouts on DB calls.\n\n_ai assisted comment_"
+      "body": "Have we considered using context.WithTimeout here? I have a preference for explicit timeouts on DB calls.\n\n🤖 Assisted with AI"
     }
   ]
 }
@@ -290,7 +290,7 @@ If any comments fail to post, report which ones failed and why.
 ## Key Principles
 
 - **Batch, don't trickle** -- never post comments one at a time during the review. Collect everything and post when the user says go.
-- **Always append footer** -- every comment body ends with `\n\n_ai assisted comment_`
+- **Always append footer** -- every comment body ends with `\n\n🤖 Assisted with AI`
 - **Single commit view** -- use `jj review` to get all changes on one commit for easy reviewing
 - **User is in control** -- don't post anything without explicit go-ahead
 - **Track state clearly** -- always be able to show the user what comments are queued
