@@ -109,6 +109,14 @@ alias py3test='/opt/dogweb/bin/python -m pytest --showlocals'
 # Aliases (sourced from separate file)
 source ~/.aliases.zsh
 
+# SSH agent - ensure it's running and key is loaded
+if ! ssh-add -l &>/dev/null; then
+  eval "$(ssh-agent -s)" &>/dev/null
+  if [[ "$(uname)" == "Darwin" ]]; then
+    ssh-add --apple-use-keychain ~/.ssh/id_ed25519 &>/dev/null 2>&1
+  fi
+fi
+
 # PERSONAL CONFIGURATION
 # Use vi cursor change `vi-mode` plugin
 VI_MODE_SET_CURSOR=true
