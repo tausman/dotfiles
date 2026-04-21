@@ -41,7 +41,7 @@
     ],
     "deny": []
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "enabledPlugins": {
     "go-code-reviewer@datadog-claude-plugins": true,
     "python-code-reviewer@datadog-claude-plugins": true,
@@ -52,7 +52,8 @@
     "user-config@datadog-claude-plugins": true,
     "streaming-platform-operators@datadog-claude-plugins": true,
     "orgstore@datadog-claude-plugins": true,
-    "github@claude-plugins-official": true
+    "github@claude-plugins-official": true,
+    "aaa-internal@datadog-claude-plugins": true
   },
   "extraKnownMarketplaces": {
     "datadog": {
@@ -64,9 +65,9 @@
   },
   "forceLoginMethod": "console",
   "alwaysThinkingEnabled": true,
+  "effortLevel": "medium",
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
-  },
-  "effortLevel": "medium"
+  }
 }

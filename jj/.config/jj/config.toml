@@ -44,6 +44,13 @@ auto-track-bookmarks = '''
 # # First bookmark or head after current position
 # 'nextbookmark' = 'roots(@:: & bookmarksandheads)'
 
+[revsets]
+log = 'present(@) | (trunk()..@) | bookmarks() | trunk()'
+
+[revset-aliases]
+# The jj default log revset — use with `jj log -r full`
+'full' = 'present(@) | ancestors(immutable_heads().., 2) | trunk()'
+
 [aliases]
 dangling-commits = ["log", "-r", "immutable_heads().. & ~bookmarks(glob:\"tausman/*\") & ~@"]
 track-branch = ["util", "exec", "--", "bash", "-c", """
