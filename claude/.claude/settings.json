@@ -69,5 +69,7 @@
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
-  }
+  },
+  "theme": "light",
+  "editorMode": "vim"
 }

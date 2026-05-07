@@ -1,0 +1,17 @@
+{
+  "claude": {
+    "agents": { "sync": true },
+    "commands": { "sync": true },
+    "env": { "sync": true },
+    "skills": { "sync": true }
+  },
+  "gateway": {
+    "anthropic": { "enabled": true },
+    "google": { "enabled": true },
+    "openai": { "enabled": true }
+  },
+  "appgate": true,
+  "aiguard": {
+    "enabled": false
+  }
+}
