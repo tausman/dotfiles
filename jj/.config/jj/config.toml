@@ -49,6 +49,13 @@ auto-track-bookmarks = '''
 'full' = 'present(@) | ancestors(immutable_heads().., 2) | trunk()'
 # Collapsed log — only current stack + bookmark tips. Use with `jj log -r simple`
 'simple' = 'present(@) | (trunk()..@) | bookmarks() | trunk()'
+# Same as `full`, but accepts a revset to exclude (along with its ancestors).
+# Examples:
+#   jj log -r 'my_log(none())'                          # no exclusions
+#   jj log -r 'my_log(bookmarks(glob:"ace/*"))'         # hide a namespace
+#   jj log -r 'my_log(bookmarks("a") | bookmarks("b"))' # hide multiple
+'my_log()' = 'my_log(none())'
+'my_log(exclude)' = '(present(@) | ancestors(immutable_heads().., 2) | trunk()) ~ ::exclude'
 
 [aliases]
 dangling-commits = ["log", "-r", "immutable_heads().. & ~bookmarks(glob:\"tausman/*\") & ~@"]
