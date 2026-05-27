@@ -52,6 +52,7 @@ auto-track-bookmarks = '''
 
 [aliases]
 dangling-commits = ["log", "-r", "immutable_heads().. & ~bookmarks(glob:\"tausman/*\") & ~@"]
+cleanup = ["abandon", "-r", "immutable_heads().. ~ ::(@ | bookmarks(glob:\"tausman/*\"))"]
 track-branch = ["util", "exec", "--", "bash", "-c", """
     set -e
     branch=\"$1\"
