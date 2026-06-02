@@ -56,6 +56,13 @@ auto-track-bookmarks = '''
 #   jj log -r 'my_log(bookmarks("a") | bookmarks("b"))' # hide multiple
 'my_log()' = 'my_log(none())'
 'my_log(exclude)' = '(present(@) | ancestors(immutable_heads().., 2) | trunk()) ~ ::exclude'
+# Good for when you have staging branches: filters out the side-branches dragged in
+# by merge commits (e.g. "integrating ..." commits under a staging merge).
+'concise' = '(present(@) | ancestors(immutable_heads().., 2) | trunk()) ~ (::merges()- ~ ::trunk())'
+# Like `concise`, but also filters out immutable commits that get referenced as a
+# result of staging branches having lots of immutable commit references (e.g. an
+# `ace/staging` merge of main pulls in many ◆ main commits). Keeps only the trunk tip.
+'super-concise' = '(present(@) | ancestors(immutable_heads().., 2) | trunk()) ~ (::merges()- ~ ::trunk()) ~ (immutable() ~ trunk())'
 
 [aliases]
 dangling-commits = ["log", "-r", "immutable_heads().. & ~bookmarks(glob:\"tausman/*\") & ~@"]
