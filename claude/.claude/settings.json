@@ -56,7 +56,8 @@
     "streaming-platform-operators@datadog-claude-plugins": true,
     "orgstore@datadog-claude-plugins": true,
     "github@claude-plugins-official": true,
-    "aaa-internal@datadog-claude-plugins": true
+    "aaa-internal@datadog-claude-plugins": true,
+    "mosaic@datadog-claude-plugins": true
   },
   "extraKnownMarketplaces": {
     "datadog": {

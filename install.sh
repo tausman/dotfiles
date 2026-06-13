@@ -2,6 +2,10 @@
 # Run order: init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
 set -e
 
+# Make brew non-interactive: skip auto-update and "Press RETURN" prompts
+export HOMEBREW_NO_AUTO_UPDATE=1
+export NONINTERACTIVE=1
+
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 PACKAGES=(
@@ -84,7 +88,7 @@ setup_base() {
     go install github.com/golang/mock/mockgen@v1.6.0
 
     # rust install
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
     # obsidian
     mkdir -p ~/vaults/work
