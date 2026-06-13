@@ -44,7 +44,6 @@
     ],
     "deny": []
   },
-  "model": "opus[1m]",
   "enabledPlugins": {
     "go-code-reviewer@datadog-claude-plugins": true,
     "python-code-reviewer@datadog-claude-plugins": true,
@@ -71,9 +70,9 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
   "skipDangerousModePermissionPrompt": true,
+  "theme": "light",
+  "editorMode": "vim",
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
-  },
-  "theme": "light",
-  "editorMode": "vim"
+  }
 }

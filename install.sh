@@ -2,9 +2,11 @@
 # Run order: init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
 set -e
 
-# Make brew non-interactive: skip auto-update and "Press RETURN" prompts
+# Make brew non-interactive: skip auto-update, "Press RETURN" prompts, and the
+# "Do you want to proceed?" confirmation for installs with many dependencies
 export HOMEBREW_NO_AUTO_UPDATE=1
 export NONINTERACTIVE=1
+export HOMEBREW_NO_ASK=1
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -106,6 +108,11 @@ setup_web_ui() {
     export VOLTA_HOME="$HOME/.volta"
     export PATH="$VOLTA_HOME/bin:$PATH"
 
+    # Install the Node version web-ui pins (.node-version / package.json "volta").
+    # Without this, volta falls back to an older default Node that's too old for
+    # web-ui's tooling (oxfmt needs the pinned 24.x to load its .ts config).
+    volta install "node@$(cat .node-version)"
+
     # Install yarn switch
     curl -sS https://repo.yarnpkg.com/install | bash
     export PATH="$HOME/.yarn/switch/bin:$PATH"
@@ -159,15 +166,20 @@ setup_repos() {
         git symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true
         git for-each-ref --format='delete %(refname)' refs/remotes/origin/ | git update-ref --stdin 2>/dev/null || true
 
-        # Configure fetch to only track default branch and tausman/* branches
-        git config remote.origin.fetch "+refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
+        # Configure fetch to only track default branch and tausman/* branches.
+        # Clear any existing values first so this is safe to re-run (the key is
+        # multi-valued, so a plain `git config` set would fail on later runs).
+        git config --unset-all remote.origin.fetch 2>/dev/null || true
+        git config --add remote.origin.fetch "+refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
         git config --add remote.origin.fetch '+refs/heads/tausman*:refs/remotes/origin/tausman*'
 
         # Fetch configured refs
         git fetch origin
 
-        # Colocate jj
-        jj git init --colocate
+        # Colocate jj (skip if already initialized — jj errors on re-init)
+        if [ ! -d .jj ]; then
+            jj git init --colocate
+        fi
 
         echo "  Done."
     done
@@ -177,8 +189,12 @@ setup_repos() {
 setup_claude() {
     echo "Setting up Claude..."
     claude install
-    claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
-    claude mcp add --scope user --transport http datadog-mcp https://mcp.datadoghq.com/api/unstable/mcp-server/mcp
+    # Skip adds that already exist — `claude mcp add` exits 1 on duplicate, which
+    # would abort the script under `set -e`.
+    claude mcp get atlassian >/dev/null 2>&1 || \
+        claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
+    claude mcp get datadog-mcp >/dev/null 2>&1 || \
+        claude mcp add --scope user --transport http datadog-mcp https://mcp.datadoghq.com/api/unstable/mcp-server/mcp
     echo "Claude setup complete."
 }
 
