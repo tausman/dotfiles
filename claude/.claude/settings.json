@@ -74,5 +74,6 @@
   "editorMode": "vim",
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
-  }
+  },
+  "model": "opus[1m]"
 }

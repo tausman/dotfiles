@@ -24,3 +24,5 @@ elif [[ "$(uname)" == "Linux" ]]; then
     export PATH="~/.local/bin:$PATH"
 fi
 
+
+. "$HOME/.config/dogbrew/env"

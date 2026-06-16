@@ -16,6 +16,7 @@ PACKAGES=(
     git
     jj
     scripts
+    ssh
     tmux
     zshrc
 )
@@ -35,7 +36,7 @@ stow_packages() {
     cd ~/dotfiles
     for pkg in "${PACKAGES[@]}"; do
         echo "Stowing $pkg..."
-        if [ "$pkg" = "jj" ]; then
+        if [ "$pkg" = "jj" ] || [ "$pkg" = "ssh" ]; then
             stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles --no-folding "$pkg"
         else
             stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles "$pkg"
