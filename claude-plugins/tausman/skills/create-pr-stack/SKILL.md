@@ -1,6 +1,6 @@
 ---
 name: create-pr-stack
-description: Create a stack of dependent draft PRs from a list of jj bookmarks. Each PR targets the previous bookmark's branch as its base (first PR targets the default branch). Uses /create-pr for each individual PR description. After all PRs are created, appends a PR Stack section with links to all PRs in every description. Use when implementing a plan that spans multiple bookmarks or when the user provides an ordered list of bookmarks for stacked review.
+description: Create a stack of dependent draft PRs from a list of jj bookmarks. Each PR targets the previous bookmark's branch as its base (first PR targets the default branch). Uses /tausman:create-pr for each individual PR description. After all PRs are created, appends a PR Stack section with links to all PRs in every description. Use when implementing a plan that spans multiple bookmarks or when the user provides an ordered list of bookmarks for stacked review.
 ---
 
 # Create PR Stack
@@ -45,9 +45,9 @@ Detect the default branch:
 gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'
 ```
 
-### 3. Create Each PR Using /create-pr Format
+### 3. Create Each PR Using /tausman:create-pr Format
 
-For each bookmark in order, create a draft PR. **Use the exact same description format as `/create-pr`** -- Why, Summary, Architecture (if applicable), Changes, Test plan, Follow-up.
+For each bookmark in order, create a draft PR. **Use the exact same description format as `/tausman:create-pr`** -- Why, Summary, Architecture (if applicable), Changes, Test plan, Follow-up.
 
 The `--base` flag sets the target branch:
 
@@ -99,10 +99,10 @@ EOF
 )"
 ```
 
-**Each PR description must follow the `/create-pr` format exactly:**
+**Each PR description must follow the `/tausman:create-pr` format exactly:**
 - **Why** -- concise motivation from the ticket
 - **Summary** -- 3-5 bullets
-- **Architecture** -- diagram if applicable (see `/create-pr` for guidance)
+- **Architecture** -- diagram if applicable (see `/tausman:create-pr` for guidance)
 - **Changes** -- grouped by component
 - **Test plan** -- actual tests run
 - **Follow-up** -- next steps
@@ -168,7 +168,7 @@ Rules:
 - **Cross repo**: use full markdown link `[repo#num](URL)`
 - Group by repo name using `###` subsections when multiple repos are involved
 - Every PR in the stack gets this section
-- If cross-repo PRs are provided (e.g., by `/ticket-worker`), include them in every PR's stack section
+- If cross-repo PRs are provided (e.g., by `/tausman:ticket-worker`), include them in every PR's stack section
 
 ### 6. Report
 
@@ -189,15 +189,15 @@ All PR descriptions include the full stack links.
 
 ## Deriving Bookmarks from a Plan
 
-When called from `/implement-plan`, the bookmarks can be derived from the progress doc:
+When called from `/tausman:implement-plan`, the bookmarks can be derived from the progress doc:
 
 - If the plan has multiple bookmarks recorded in the progress table, use those in order
-- If the plan has a single bookmark, use `/create-pr` instead (not a stack)
+- If the plan has a single bookmark, use `/tausman:create-pr` instead (not a stack)
 - If the user hasn't set bookmarks yet, ask which phases should be grouped into which bookmarks
 
 ## Updating an Existing Stack
 
-If PRs already exist and the stack needs updating (e.g., after `/iterate-plan`):
+If PRs already exist and the stack needs updating (e.g., after `/tausman:iterate-plan`):
 
 1. Push updated bookmarks: `jj git push --bookmark <name>`
 2. Update PR descriptions if the changes have shifted
@@ -206,7 +206,7 @@ If PRs already exist and the stack needs updating (e.g., after `/iterate-plan`):
 
 ## Key Principles
 
-- **Same format as `/create-pr`** -- Why, Summary, Changes, Test plan, Follow-up. No deviations.
+- **Same format as `/tausman:create-pr`** -- Why, Summary, Changes, Test plan, Follow-up. No deviations.
 - **Always draft** -- every PR in the stack is created as a draft
 - **Each PR is scoped** -- description covers only that PR's diff, not the whole stack
 - **Stack links in every PR** -- reviewer can navigate the full stack from any PR

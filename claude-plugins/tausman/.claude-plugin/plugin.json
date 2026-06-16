@@ -1,0 +1,10 @@
+{
+  "name": "tausman",
+  "description": "Tausman's personal Claude Code toolkit: planning/PR/ticket skills, codebase-research agents, and MCP servers.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Tausif Rahman",
+    "email": "tausif.rahman@datadoghq.com"
+  },
+  "mcpServers": "./.mcp.json"
+}

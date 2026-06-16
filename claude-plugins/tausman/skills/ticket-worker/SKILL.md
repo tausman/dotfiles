@@ -1,6 +1,6 @@
 ---
 name: ticket-worker
-description: End-to-end ticket workflow. Takes a Jira ticket number, fetches context, orchestrates /research-codebase, /create-plan, /implement-plan, and /create-pr skills. Use when user provides a ticket number and wants the full research-plan-implement-PR cycle.
+description: End-to-end ticket workflow. Takes a Jira ticket number, fetches context, orchestrates /tausman:research-codebase, /tausman:create-plan, /tausman:implement-plan, and /tausman:create-pr skills. Use when user provides a ticket number and wants the full research-plan-implement-PR cycle.
 ---
 
 # Ticket Worker
@@ -61,20 +61,20 @@ Automatically analyze the ticket context to identify research areas. Do this **r
 
 Classify all direction (user-provided and self-derived) into two categories:
 
-**Research-oriented** (feeds to /research-codebase):
+**Research-oriented** (feeds to /tausman:research-codebase):
 - Understanding the problem domain and affected systems
 - How things currently work
 - Similar patterns or prior art in the codebase
 - Dependency and boundary exploration
 - Areas that inform a potential solution direction
 
-**Plan-oriented** (held for /create-plan):
+**Plan-oriented** (held for /tausman:create-plan):
 - "Use approach X for this"
 - "Make sure to consider Y constraint"
 - "Break it into small PRs"
 - Implementation preferences
 
-### 6. Execute /research-codebase
+### 6. Execute /tausman:research-codebase
 
 Invoke the research-codebase skill with:
 - Ticket context (title, description, acceptance criteria)
@@ -85,7 +85,7 @@ Output: `~/artifacts/<TICKET>/research-<TICKET>.md` (e.g., `~/artifacts/CRED-217
 
 **After research completes:** Proceed directly to planning. Do not pause for confirmation.
 
-### 7. Execute /create-plan
+### 7. Execute /tausman:create-plan
 
 Invoke the create-plan skill with:
 - Research document as input context
@@ -97,7 +97,7 @@ Output: `~/artifacts/<TICKET>/plan-<TICKET>.md` (e.g., `~/artifacts/CRED-2174/pl
 
 **After plan completes:** Proceed directly to implementation. Do not pause for approval.
 
-### 8. Execute /implement-plan
+### 8. Execute /tausman:implement-plan
 
 **Single-repo work:**
 
@@ -113,7 +113,7 @@ When the plan involves multiple repos, use the Agent tool to spawn a team of sub
    - The full plan document
    - The subset of phases that apply to its repo
    - The ticket ID for artifact naming
-   - Instructions to invoke `/implement-plan` for its phases
+   - Instructions to invoke `/tausman:implement-plan` for its phases
 2. **Coordinate dependencies** - If repo B depends on repo A's changes (e.g., proto definitions, shared libraries), repo A's agent must complete its relevant phases first. Sequence agent launches accordingly.
 3. **Each agent produces its own artifacts** - `progress-<TICKET>.md` in its repo's working directory
 4. **Collect results** - After all agents complete, gather progress docs, bookmarks, and any blockers from each repo
@@ -133,11 +133,11 @@ After implementation completes, create PRs. **All PRs are always created as draf
 
 Determine PR structure from the plan -- the plan marks bookmark boundaries, so each bookmark becomes a PR:
 
-**Single bookmark:** Invoke `/create-pr`.
+**Single bookmark:** Invoke `/tausman:create-pr`.
 
-**Multiple bookmarks (single or multi-repo):** Invoke `/create-pr-stack` with the ordered list of bookmarks per repo.
+**Multiple bookmarks (single or multi-repo):** Invoke `/tausman:create-pr-stack` with the ordered list of bookmarks per repo.
 
-**Multi-repo:** Each repo gets its own PR stack (via `/create-pr-stack`). After all PRs are created across all repos, update every PR description to include the full cross-repo PR stack (see "Cross-Repo PR Stack" below).
+**Multi-repo:** Each repo gets its own PR stack (via `/tausman:create-pr-stack`). After all PRs are created across all repos, update every PR description to include the full cross-repo PR stack (see "Cross-Repo PR Stack" below).
 
 #### Cross-Repo PR Stack
 
@@ -224,7 +224,7 @@ If the workflow is interrupted or blocked at any stage:
 
 1. **Save state** - All artifacts are already on disk with ticket-based names
 2. **Explain status** - Which phase completed, what's pending
-3. **Resume instructions** - User can re-invoke `/ticket-worker <TICKET>` and point to existing artifacts to skip completed phases
+3. **Resume instructions** - User can re-invoke `/tausman:ticket-worker <TICKET>` and point to existing artifacts to skip completed phases
 
 ## Key Principles
 

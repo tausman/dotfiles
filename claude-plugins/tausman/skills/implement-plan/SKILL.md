@@ -51,7 +51,7 @@ For each phase:
   - Exception: only skip if (1) no tests exist in the codebase, or (2) adding tests is genuinely impractical — document which exception applies in the progress doc
 - Ensure all prior & new tests are passing before committing
 
-**Commit with jj** (see `/jj-workflow` for full reference):
+**Commit with jj** (see `/tausman:jj-workflow` for full reference):
 ```bash
 jj describe -m "Phase N: <descriptive message>
 
@@ -82,7 +82,7 @@ The plan marks bookmark boundaries (e.g., `--- BOOKMARK: tausman/<ticket>-<desc>
 4. Continue to the next phase (which starts a new bookmark group)
 
 **Editing a previous phase's commit:**
-If you discover a fix or improvement that belongs in an earlier phase, use `jj edit <change-id>` to go back, make the change, then return to the top of the stack. **Always check `jj log` for conflicts in all descendant commits afterward and resolve every one before continuing.** See `/jj-workflow` for the full edit and conflict resolution flow.
+If you discover a fix or improvement that belongs in an earlier phase, use `jj edit <change-id>` to go back, make the change, then return to the top of the stack. **Always check `jj log` for conflicts in all descendant commits afterward and resolve every one before continuing.** See `/tausman:jj-workflow` for the full edit and conflict resolution flow.
 
 **Verify automatically:**
 ```bash
@@ -197,8 +197,8 @@ Next Steps:
 ```
 
 5. **Create PR** - Ask the user if they want to open a PR. If yes:
-   - **Multiple bookmarks**: invoke `/create-pr-stack` with the ordered list of bookmarks from the progress doc. Each PR targets the previous bookmark as its base.
-   - **Single bookmark**: invoke `/create-pr` for a single draft PR.
+   - **Multiple bookmarks**: invoke `/tausman:create-pr-stack` with the ordered list of bookmarks from the progress doc. Each PR targets the previous bookmark as its base.
+   - **Single bookmark**: invoke `/tausman:create-pr` for a single draft PR.
    - All PRs are always created as drafts.
 
 ## Handling Issues
@@ -226,6 +226,6 @@ Next Steps:
 - **Verify automatically first** - Then manual testing
 - **Explicit confirmation between phases** - Never auto-advance
 - **Document issues immediately** - Don't let problems accumulate
-- **Use jj for all VCS operations** - See `/jj-workflow` for complete reference. `jj describe`, `jj new`, `jj status`, `jj diff`, `jj log`
+- **Use jj for all VCS operations** - See `/tausman:jj-workflow` for complete reference. `jj describe`, `jj new`, `jj status`, `jj diff`, `jj log`
 - **Keep a clean linear stack** - Phases are consecutive commits. Editing earlier commits is fine but resolve all conflicts in the full stack before continuing.
 - **Track progress** - Keep the progress doc current throughout implementation

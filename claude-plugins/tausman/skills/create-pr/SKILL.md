@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Create a GitHub pull request in draft mode with a standardized format. Use when the user wants to open a PR, push changes for review, or after /implement-plan completes. Always creates PRs as drafts. Follows a strict PR description format with Why, Summary, Changes, Test plan, and optional diagrams.
+description: Create a GitHub pull request in draft mode with a standardized format. Use when the user wants to open a PR, push changes for review, or after /tausman:implement-plan completes. Always creates PRs as drafts. Follows a strict PR description format with Why, Summary, Changes, Test plan, and optional diagrams.
 ---
 
 # Create PR
@@ -229,7 +229,7 @@ Rules:
 
 ## Updating a PR
 
-Whenever changes are pushed to an existing PR branch (new commits, amended commits, rebases), **always update the PR description to reflect the current state**. This applies whether the update is triggered by the user asking to push, or as part of `/implement-plan` or `/iterate-plan`.
+Whenever changes are pushed to an existing PR branch (new commits, amended commits, rebases), **always update the PR description to reflect the current state**. This applies whether the update is triggered by the user asking to push, or as part of `/tausman:implement-plan` or `/tausman:iterate-plan`.
 
 ### What to update
 

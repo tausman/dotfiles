@@ -82,7 +82,8 @@ setup_base() {
     if [ ! -d ~/.tmux/plugins/tpm ]; then
         git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
     fi
-    # Install TPM plugins headlessly
+    # Install TPM plugins headlessly. The config sets TMUX_PLUGIN_MANAGER_PATH
+    # synchronously, so the new server has it before install_plugins runs.
     tmux new-session -d -s tpm_install 2>/dev/null || true
     ~/.tmux/plugins/tpm/bin/install_plugins
     tmux kill-session -t tpm_install 2>/dev/null || true
@@ -190,12 +191,14 @@ setup_repos() {
 setup_claude() {
     echo "Setting up Claude..."
     claude install
-    # Skip adds that already exist — `claude mcp add` exits 1 on duplicate, which
-    # would abort the script under `set -e`.
-    claude mcp get atlassian >/dev/null 2>&1 || \
-        claude mcp add --scope user --transport sse atlassian https://mcp.atlassian.com/v1/sse
-    claude mcp get datadog-mcp >/dev/null 2>&1 || \
-        claude mcp add --scope user --transport http datadog-mcp https://mcp.datadoghq.com/api/unstable/mcp-server/mcp
+    # Skills, agents, commands, and MCP servers are bundled in the local "tausman"
+    # plugin (dotfiles/claude-plugins). Register the marketplace and install it.
+    # Both commands exit non-zero if already present, which would abort under
+    # `set -e`, so guard each on a presence check.
+    claude plugin marketplace list 2>/dev/null | grep -q '\btausman\b' || \
+        claude plugin marketplace add "$DOTFILES_DIR/claude-plugins"
+    claude plugin list 2>/dev/null | grep -q 'tausman@tausman' || \
+        claude plugin install tausman@tausman
     echo "Claude setup complete."
 }
 

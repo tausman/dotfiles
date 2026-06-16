@@ -31,9 +31,9 @@ description: Create detailed implementation plans with thorough research and ite
 ### 3. Spawn Parallel Sub-Agents
 
 **Codebase Research:**
-- `codebase-locator` - Find WHERE files/components live
-- `codebase-analyzer` - Understand HOW existing code works
-- `codebase-pattern-finder` - Find similar implementations to learn from
+- `tausman:codebase-locator` - Find WHERE files/components live
+- `tausman:codebase-analyzer` - Understand HOW existing code works
+- `tausman:codebase-pattern-finder` - Find similar implementations to learn from
 
 **Agent Tips:**
 - Start with locator agents to find what exists
@@ -154,7 +154,7 @@ When the work spans multiple repos, the plan must clearly reflect this:
 - **Mark cross-repo dependencies** - If a phase in repo B depends on a phase in repo A, state this explicitly (e.g., "depends on repo-a phase 1")
 - **Identify shared artifacts** - Proto definitions, config files, shared libraries that bridge repos
 - **Sequence for correctness** - Upstream repos (protos, shared libs) before downstream consumers
-- **Note which agent handles which repo** - When used with `/ticket-worker`, each repo gets its own agent
+- **Note which agent handles which repo** - When used with `/tausman:ticket-worker`, each repo gets its own agent
 
 Example structure:
 

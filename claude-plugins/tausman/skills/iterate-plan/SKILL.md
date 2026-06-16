@@ -1,6 +1,6 @@
 ---
 name: iterate-plan
-description: Pause, reevaluate, and revise an existing implementation plan. Use when something is incorrect, missing, or could be done better in the current plan or implementation. Also use when addressing PR feedback. Can be called at any point -- mid-implementation, after completion, or when the user wants to rethink the approach. If the user says "/iterate-plan & implement" or similar, execute /implement-plan afterward with the updated plan.
+description: Pause, reevaluate, and revise an existing implementation plan. Use when something is incorrect, missing, or could be done better in the current plan or implementation. Also use when addressing PR feedback. Can be called at any point -- mid-implementation, after completion, or when the user wants to rethink the approach. If the user says "/tausman:iterate-plan & implement" or similar, execute /tausman:implement-plan afterward with the updated plan.
 ---
 
 # Iterate Plan
@@ -43,7 +43,7 @@ Ask the user (or parse from args/context):
 - **Scope** -- Does this affect an existing phase or is it new/additional work?
 
 Research if needed:
-- Use `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder` sub-agents to investigate
+- Use `tausman:codebase-locator`, `tausman:codebase-analyzer`, `tausman:codebase-pattern-finder` sub-agents to investigate
 - Read relevant code to understand the current implementation state
 - Understand the implications of the requested change
 
@@ -122,8 +122,8 @@ No commits exist yet, so this is purely a plan doc update:
   - [YYYY-MM-DD HH:MM] Phase N revised (not yet implemented): <reason>
   ```
 
-**If user requested implementation (`/iterate-plan & implement`):**
-- Invoke `/implement-plan` with the updated plan doc path
+**If user requested implementation (`/tausman:iterate-plan & implement`):**
+- Invoke `/tausman:implement-plan` with the updated plan doc path
 - Instruct it to start from the revised phase
 
 #### If A2 (completed/in-progress phase -- plan + commit change):
@@ -139,12 +139,12 @@ No commits exist yet, so this is purely a plan doc update:
 - From the progress doc, find the change-id for the phase being edited
 - This is the commit that will be modified via `jj edit`
 
-**If user requested implementation (`/iterate-plan & implement`):**
-- Invoke `/implement-plan` with:
+**If user requested implementation (`/tausman:iterate-plan & implement`):**
+- Invoke `/tausman:implement-plan` with:
   - The updated plan doc path
   - Instruction to start from the amended phase
   - The specific change-id to `jj edit` for the amended phase
-  - `/implement-plan` will use `jj edit <change-id>`, make the changes, update the commit message, resolve all conflicts in the stack, then continue with any remaining phases
+  - `/tausman:implement-plan` will use `jj edit <change-id>`, make the changes, update the commit message, resolve all conflicts in the stack, then continue with any remaining phases
 
 ### 5B. Execute Path B -- New Phase
 
@@ -169,11 +169,11 @@ No commits exist yet, so this is purely a plan doc update:
   - [YYYY-MM-DD HH:MM] Added Phase N+1: <reason>
   ```
 
-**If user requested implementation (`/iterate-plan & implement`):**
-- Invoke `/implement-plan` with:
+**If user requested implementation (`/tausman:iterate-plan & implement`):**
+- Invoke `/tausman:implement-plan` with:
   - The updated plan doc path
   - Instruction to start from the newly added phase
-  - `/implement-plan` will create a new commit via `jj describe` + `jj new` as normal
+  - `/tausman:implement-plan` will create a new commit via `jj describe` + `jj new` as normal
 
 ### 6. Summary
 
@@ -186,15 +186,15 @@ Iteration complete:
 - Progress updated: ./progress-<TICKET>.md
 - [Phase N amended | Phase N+1 added]
 
-Next: [Ready for /implement-plan | Implementation in progress | Waiting for user direction]
+Next: [Ready for /tausman:implement-plan | Implementation in progress | Waiting for user direction]
 ```
 
 ## Key Principles
 
 - **PR feedback is always a new phase and new commit** -- never rewrite reviewed history
-- **Edits to existing work go in the original commit** -- use `jj edit` via `/jj-workflow`
+- **Edits to existing work go in the original commit** -- use `jj edit` via `/tausman:jj-workflow`
 - **Always update both plan and progress docs** -- keep the paper trail current
 - **Get user agreement on classification** -- don't assume Path A vs Path B
 - **Amendments preserve history** -- the original plan text stays, amendments are appended
-- **Resolve all conflicts** -- after editing any commit, the entire stack must be clean (see `/jj-workflow`)
-- **If asked to implement, invoke `/implement-plan`** -- this skill handles the planning revision, `/implement-plan` handles execution
+- **Resolve all conflicts** -- after editing any commit, the entire stack must be clean (see `/tausman:jj-workflow`)
+- **If asked to implement, invoke `/tausman:implement-plan`** -- this skill handles the planning revision, `/tausman:implement-plan` handles execution

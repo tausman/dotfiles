@@ -20,9 +20,9 @@ Conduct comprehensive codebase research using parallel sub-agents.
   - Create TodoWrite research plan with specific investigation
   - **note**: "specific research requests" will have additional tasks
 3. **Spawn Parallel sub-agents**
-  - Use `codebase-locator` agents to find relevant files and directories
-  - Use `codebase-analyzer` agents on promising findings for deep dives
-  - Use `codebase-pattern-finder` for finding similar implementations or examples
+  - Use `tausman:codebase-locator` agents to find relevant files and directories
+  - Use `tausman:codebase-analyzer` agents on promising findings for deep dives
+  - Use `tausman:codebase-pattern-finder` for finding similar implementations or examples
   - Run multiple agents in parallel for efficiency
 4. **Wait for ALL sub-agents**, then synthesize
   - Prioritize live codebase findings over thoughts/ documentation
