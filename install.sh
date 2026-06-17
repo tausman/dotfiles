@@ -161,6 +161,11 @@ setup_repos() {
     [ -d ~/dd/team-aaa-internal-tools/.git ] || \
         git clone git@github.com:DataDog/team-aaa-internal-tools.git ~/dd/team-aaa-internal-tools
 
+    # Expose the acepg postgres-access helper (a git-tracked bash script) on
+    # PATH, mirroring the local ~/.local/bin/acepg symlink.
+    mkdir -p ~/.local/bin
+    ln -sf ~/dd/team-aaa-internal-tools/postgres-access-tool/acepg ~/.local/bin/acepg
+
     local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui ~/dd/team-aaa-internal-tools)
 
     for repo in "${repos[@]}"; do
