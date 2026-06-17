@@ -69,10 +69,9 @@
     },
     "tausman": {
       "source": {
-        "source": "directory",
-        "path": "${HOME}/dotfiles/claude-plugins"
-      },
-      "autoUpdate": true
+        "source": "git",
+        "url": "git@github.com:tausman/claude-plugins.git"
+      }
     }
   },
   "forceLoginMethod": "console",

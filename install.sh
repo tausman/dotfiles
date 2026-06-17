@@ -99,6 +99,13 @@ setup_base() {
     # obsidian
     mkdir -p ~/vaults/work
 
+    # Colocate jj in the dotfiles repo itself (skip if already initialized —
+    # jj errors on re-init).
+    if [ ! -d "$DOTFILES_DIR/.jj" ]; then
+        cd "$DOTFILES_DIR"
+        jj git init --colocate
+    fi
+
     echo "Base setup complete."
     echo "Run: source ~/.zshrc"
 }
@@ -193,12 +200,17 @@ setup_repos() {
 setup_claude() {
     echo "Setting up Claude..."
     claude install
-    # Skills, agents, commands, and MCP servers are bundled in the local "tausman"
-    # plugin (dotfiles/claude-plugins). Register the marketplace and install it.
+    # Skills, agents, commands, and MCP servers live in the standalone "tausman"
+    # marketplace repo (github.com/tausman/claude-plugins), split out of dotfiles.
+    # Keep a local clone at ~/claude-plugins purely for editing; the marketplace
+    # is sourced from the remote so `claude plugin marketplace update tausman` can
+    # pull changes directly. See that repo's README for the propagation workflow.
+    local plugins_repo="git@github.com:tausman/claude-plugins.git"
+    [ -d "$HOME/claude-plugins/.git" ] || git clone "$plugins_repo" "$HOME/claude-plugins"
     # Both commands exit non-zero if already present, which would abort under
     # `set -e`, so guard each on a presence check.
     claude plugin marketplace list 2>/dev/null | grep -q '\btausman\b' || \
-        claude plugin marketplace add "$DOTFILES_DIR/claude-plugins"
+        claude plugin marketplace add "$plugins_repo"
     claude plugin list 2>/dev/null | grep -q 'tausman@tausman' || \
         claude plugin install tausman@tausman
     echo "Claude setup complete."
