@@ -25,4 +25,4 @@ elif [[ "$(uname)" == "Linux" ]]; then
 fi
 
 
-. "$HOME/.config/dogbrew/env"
+[[ -f "$HOME/.config/dogbrew/env" ]] && . "$HOME/.config/dogbrew/env"

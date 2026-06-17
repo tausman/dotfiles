@@ -50,8 +50,8 @@ init() {
     echo "initializing..."
     # Install linuxbrew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    echo >> ~/.zshenv
-    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> ~/.zshenv
+    # Activate brew for the rest of this script run (it isn't on PATH yet, and
+    # this bash process never sources ~/.zshenv where the persistent setup lives).
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
     # github config
