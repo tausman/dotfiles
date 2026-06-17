@@ -155,7 +155,13 @@ EOF
 
 setup_repos() {
     echo "Setting up repo fetch configs..."
-    local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui)
+
+    # Clone repos that aren't checked out by other tooling. The dd/* monorepos
+    # are expected to already exist; this one we fetch ourselves.
+    [ -d ~/dd/team-aaa-internal-tools/.git ] || \
+        git clone git@github.com:DataDog/team-aaa-internal-tools.git ~/dd/team-aaa-internal-tools
+
+    local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui ~/dd/team-aaa-internal-tools)
 
     for repo in "${repos[@]}"; do
         if [ ! -d "$repo/.git" ]; then
