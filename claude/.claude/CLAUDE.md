@@ -18,6 +18,7 @@
 
 ## Version Control
 - Always use jj (Jujutsu) for commits. Only use git as a last resort if jj is not available.
+- If a repo isn't jj-initialized (`jj root` errors / no `.jj` dir), run `jj git init --colocate` in it first (preserves git history), then use the jj workflow.
 - Commit workflow: `jj describe -m "message"` to set the commit message, then `jj new` to start a fresh working commit.
 - Use `jj bookmark` for branch management, `jj git push` to push.
 - Branch/bookmark naming: `tausman/<ticket-short-description>` (e.g., `tausman/cred-2174-pat-support`)

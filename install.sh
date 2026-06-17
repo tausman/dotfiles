@@ -206,7 +206,13 @@ setup_claude() {
     # is sourced from the remote so `claude plugin marketplace update tausman` can
     # pull changes directly. See that repo's README for the propagation workflow.
     local plugins_repo="git@github.com:tausman/claude-plugins.git"
-    [ -d "$HOME/claude-plugins/.git" ] || git clone "$plugins_repo" "$HOME/claude-plugins"
+    local plugins_dir="$HOME/claude-plugins"
+    [ -d "$plugins_dir/.git" ] || git clone "$plugins_repo" "$plugins_dir"
+    # Colocate jj in the editing clone (skip if already initialized — jj errors
+    # on re-init).
+    if [ ! -d "$plugins_dir/.jj" ]; then
+        ( cd "$plugins_dir" && jj git init --colocate )
+    fi
     # Both commands exit non-zero if already present, which would abort under
     # `set -e`, so guard each on a presence check.
     claude plugin marketplace list 2>/dev/null | grep -q '\btausman\b' || \
