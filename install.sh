@@ -43,6 +43,9 @@ stow_packages() {
         fi
     done
     echo "Done stowing packages."
+    # Reload tmux config into any running server so changes take effect without
+    # restarting tmux (no-op if no server is running).
+    tmux source-file ~/.tmux.conf 2>/dev/null || true
     echo "Run: source ~/.zshrc"
 }
 
