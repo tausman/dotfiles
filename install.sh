@@ -82,11 +82,13 @@ setup_base() {
     if [ ! -d ~/.tmux/plugins/tpm ]; then
         git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
     fi
-    # Install TPM plugins headlessly. The config sets TMUX_PLUGIN_MANAGER_PATH
-    # synchronously, so the new server has it before install_plugins runs.
-    tmux new-session -d -s tpm_install 2>/dev/null || true
+    # Install TPM plugins headlessly. TPM reads TMUX_PLUGIN_MANAGER_PATH from the
+    # tmux server, but `tmux start-server` (which TPM calls) does NOT source the
+    # config, and a server already running (e.g. if install.sh runs inside tmux)
+    # won't have it set. So set it explicitly on the server before installing.
+    tmux start-server
+    tmux set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.tmux/plugins/"
     ~/.tmux/plugins/tpm/bin/install_plugins
-    tmux kill-session -t tpm_install 2>/dev/null || true
 
     # go tools
     go install github.com/golang/mock/mockgen@v1.6.0
