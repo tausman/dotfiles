@@ -71,7 +71,8 @@
       "source": {
         "source": "git",
         "url": "git@github.com:tausman/claude-plugins.git"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "forceLoginMethod": "console",
