@@ -40,7 +40,6 @@
 	format = ssh
 [gpg "ssh"]
 	allowedSignersFile = ~/.ssh/allowed_signers
-	program = dd-gitsign
 [init]
 	templateDir = ~/.git-template
 [fetch]
@@ -51,11 +50,9 @@
 	setup-fetch = "!f() { default_branch=$(git ls-remote --symref origin HEAD | awk '/^ref:/ {sub(\"refs/heads/\", \"\", $2); print $2}'); if [ -z \"$default_branch\" ]; then echo \"Could not determine default branch\" && exit 1; fi; echo \"Default branch: $default_branch\"; git symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true; git for-each-ref --format='delete %(refname)' refs/remotes/origin/ | git update-ref --stdin 2>/dev/null || true; git config remote.origin.fetch \"+refs/heads/${default_branch}:refs/remotes/origin/${default_branch}\"; git config --add remote.origin.fetch '+refs/heads/tausman*:refs/remotes/origin/tausman*'; git fetch origin; }; f"
 [credential]
         helper = osxkeychain
-[dd-gitsign]
-	username = tausman
 [credential "https://github.com"]
 	helper = 
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential

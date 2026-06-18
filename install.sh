@@ -236,6 +236,12 @@ setup_claude() {
     echo "Claude setup complete."
 }
 
+setup_pi() {
+    echo "Setting up pi..."
+    npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+    echo "pi setup complete."
+}
+
 setup_dogweb() {
     echo "Setting up dogweb..."
     cd ~/dd/dogweb
@@ -253,6 +259,7 @@ run_all() {
     setup_base
     setup_repos
     setup_claude
+    setup_pi
     setup_web_ui
     setup_dogweb
     echo "Run: source ~/.zshrc"
@@ -272,6 +279,7 @@ case "${1:-stow}" in
     repos)          setup_repos ;;
     web-ui)         setup_web_ui ;;
     claude)         setup_claude ;;
+    pi)             setup_pi ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|claude|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
 esac
