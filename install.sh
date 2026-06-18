@@ -51,6 +51,17 @@ stow_packages() {
 
 init() {
     echo "initializing..."
+
+    # jj signs commits (signing.behavior="own") with the public key file at
+    # ~/.ssh/id_ed25519.pub. We don't keep keys on the workspace — the private
+    # key lives on the laptop and reaches us via the forwarded agent — but jj
+    # still needs the *public* key file on disk to sign, or `jj git init` fails
+    # with "Couldn't load public key ... No such file or directory". Pull it from
+    # the forwarded agent (the grep matches only the tausman signing key).
+    mkdir -p ~/.ssh
+    pubkey=$(ssh-add -L 2>/dev/null | grep 'tausif.rahman@datadoghq.com')
+    [ -n "$pubkey" ] && printf '%s\n' "$pubkey" > ~/.ssh/id_ed25519.pub
+
     # Install linuxbrew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     # Activate brew for the rest of this script run (it isn't on PATH yet, and
@@ -60,11 +71,19 @@ init() {
     # github config
     brew install gh
     if ! gh auth status &>/dev/null; then
-        # SSH keys and commit signing come from the laptop via the forwarded
-        # agent (config-tool runs only there), so this workspace needs no keys of
-        # its own — skip gh's key prompt. -c copies the one-time device code to
-        # the clipboard.
-        gh auth login -h github.com -p ssh --skip-ssh-key -c
+        # Two GitHub accounts are needed: the primary (tausman) and the Datadog
+        # managed identity (tausif-rahman_ddog, for ddoghq-sandbox repos). SSH
+        # keys and commit signing come from the laptop via the forwarded agent
+        # (config-tool runs only there), so this workspace needs no keys of its
+        # own — skip gh's key prompt. -w opens a browser, -c copies the device code.
+        echo "Log in with your PRIMARY GitHub account (tausman):"
+        gh auth login -h github.com -p ssh --skip-ssh-key -w -c
+
+        echo "Now log in again with the DATADOG MANAGED IDENTITY (tausif-rahman_ddog):"
+        gh auth login -h github.com -p ssh --skip-ssh-key -w -c
+
+        # Leave the primary account active for the rest of the flow.
+        gh auth switch -h github.com -u tausman
     else
         echo "gh already authenticated, skipping..."
     fi
@@ -76,14 +95,16 @@ setup_base() {
     echo "Setting up base tools..."
 
     # core tools
-    sudo apt remove -y tmux
-    brew install neovim fzf tmux go jj ripgrep nnn jjui
+    # Keep tmux as the distro-managed package instead of swapping in a brew one.
+    # Installing a brew tmux while attached to a running (apt) tmux server breaks:
+    # the new client can't talk to the old server (protocol version mismatch), and
+    # TPM's install_plugins shells out to tmux against that server. apt install
+    # (no remove) leaves the running server's binary path stable, so no mismatch.
+    sudo apt install -y tmux
+    brew install neovim fzf go jj ripgrep nnn jjui
     brew tap datadog-labs/pack
     brew install datadog-labs/pack/pup
     curl -Ls https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs | sh
-    # Symlink tmux into ~/.local/bin so tmux's run-shell subprocesses can find it
-    # (they inherit tmux's global PATH, which doesn't include the Linuxbrew prefix)
-    ln -sf /home/linuxbrew/.linuxbrew/bin/tmux ~/.local/bin/tmux
     if [ ! -d ~/.tmux/plugins/tpm ]; then
         git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
     fi
@@ -159,16 +180,21 @@ setup_repos() {
     echo "Setting up repo fetch configs..."
 
     # Clone repos that aren't checked out by other tooling. The dd/* monorepos
-    # are expected to already exist; this one we fetch ourselves.
+    # are expected to already exist; these we fetch ourselves.
     [ -d ~/dd/team-aaa-internal-tools/.git ] || \
         git clone git@github.com:DataDog/team-aaa-internal-tools.git ~/dd/team-aaa-internal-tools
+
+    # pi coding agent packages — lives in the ddoghq-sandbox org, accessed via the
+    # tausif-rahman_ddog managed identity.
+    [ -d ~/dd/datadog-pi-packages/.git ] || \
+        git clone git@github.com:ddoghq-sandbox/datadog-pi-packages.git ~/dd/datadog-pi-packages
 
     # Expose the acepg postgres-access helper (a git-tracked bash script) on
     # PATH, mirroring the local ~/.local/bin/acepg symlink.
     mkdir -p ~/.local/bin
     ln -sf ~/dd/team-aaa-internal-tools/postgres-access-tool/acepg ~/.local/bin/acepg
 
-    local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui ~/dd/team-aaa-internal-tools)
+    local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui ~/dd/team-aaa-internal-tools ~/dd/datadog-pi-packages)
 
     for repo in "${repos[@]}"; do
         if [ ! -d "$repo/.git" ]; then
