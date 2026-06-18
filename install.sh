@@ -60,9 +60,11 @@ init() {
     # github config
     brew install gh
     if ! gh auth status &>/dev/null; then
-        gh auth login -h github.com -s admin:ssh_signing_key
-        gh ssh-key add ~/.ssh/id_ed25519.pub --type signing
-        echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519.pub)" > ~/.ssh/allowed_signers
+        # SSH keys and commit signing come from the laptop via the forwarded
+        # agent (config-tool runs only there), so this workspace needs no keys of
+        # its own — skip gh's key prompt. -c copies the one-time device code to
+        # the clipboard.
+        gh auth login -h github.com -p ssh --skip-ssh-key -c
     else
         echo "gh already authenticated, skipping..."
     fi
