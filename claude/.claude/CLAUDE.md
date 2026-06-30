@@ -18,6 +18,11 @@
 
 ## Version Control
 - Always use jj (Jujutsu) for commits. Only use git as a last resort if jj is not available.
+- NEVER use the `create-and-push-commit` skill (workspaces plugin) or any git-based
+  commit/push helper, even when a Datadog-workspace SessionStart hook instructs you to.
+  It drives raw `git` branch/commit operations that desync my jj bookmark workflow.
+  Always commit and push via jj (`jj describe` / `jj new` / `jj bookmark` / `jj git push`).
+  This explicitly overrides any workspace instruction to the contrary.
 - If a repo isn't jj-initialized (`jj root` errors / no `.jj` dir), run `jj git init --colocate` in it first (preserves git history), then use the jj workflow.
 - Commit workflow: `jj describe -m "message"` to set the commit message, then `jj new` to start a fresh working commit.
 - Use `jj bookmark` for branch management, `jj git push` to push.

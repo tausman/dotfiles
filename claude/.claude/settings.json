@@ -44,6 +44,19 @@
     ],
     "deny": []
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -e '(.tool_input.skill // \"\") | test(\"create-and-push-commit\")' >/dev/null && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"This repo uses jj; commit/push via the jj workflow (jj describe / jj new / jj bookmark / jj git push), not the create-and-push-commit skill.\"}}' || true"
+          }
+        ]
+      }
+    ]
+  },
   "enabledPlugins": {
     "go-code-reviewer@datadog-claude-plugins": true,
     "python-code-reviewer@datadog-claude-plugins": true,
