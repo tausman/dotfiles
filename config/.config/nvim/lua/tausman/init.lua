@@ -62,7 +62,7 @@ autocmd('LspAttach', {
 
         local client = vim.lsp.get_client_by_id(e.data.client_id)
         -- Set up formatting
-        if client.supports_method("textDocument/formatting") then
+        if client:supports_method("textDocument/formatting") then
             vim.api.nvim_create_autocmd("BufWritePre", {
                 buffer = e.buf,
                 callback = function()
@@ -72,7 +72,7 @@ autocmd('LspAttach', {
         end
 
         -- Set up symbol highlighting
-        if client.supports_method("textDocument/documentHighlight") then
+        if client:supports_method("textDocument/documentHighlight") then
             vim.api.nvim_create_autocmd("CursorHold", {
                 buffer = 0,
                 callback = function()
