@@ -1,35 +1,37 @@
+-- nvim-treesitter `main` branch (the rewrite).
+--
+-- The legacy `master` branch was archived in 2025 and is incompatible with
+-- Neovim 0.11+/0.12: its custom query directives (e.g. `set-lang-from-info-string!`)
+-- assume the old single-node directive `match`, which became a list of nodes,
+-- so they crash on markdown injection parsing.
+--
+-- `main` is a full rewrite. It only installs parsers + queries; features are
+-- enabled with core APIs:
+--   * highlighting -> vim.treesitter.start()
+--   * indentation  -> indentexpr (experimental on main)
+-- Requires the `tree-sitter` CLI (>= 0.26.1) on PATH to compile parsers.
 return {
 	"nvim-treesitter/nvim-treesitter",
+	branch = "main",
+	lazy = false, -- main does not support lazy-loading
 	build = ":TSUpdate",
-        config = function()
-            require("nvim-treesitter.configs").setup({
-                -- A list of parser names, or "all"
-                ensure_installed = {
-                    "vimdoc", "javascript", "typescript", "c", "lua", "rust",
-                    "jsdoc", "bash", "go", "python",
-                },
+	config = function()
+		require("nvim-treesitter").install({
+			"vimdoc", "javascript", "typescript", "c", "lua", "rust",
+			"jsdoc", "bash", "go", "python", "markdown", "markdown_inline",
+		})
 
-                -- Install parsers synchronously (only applied to `ensure_installed`)
-                sync_install = false,
+		vim.api.nvim_create_autocmd("FileType", {
+			callback = function(args)
+				-- Highlighting (provided by Neovim core). pcall keeps filetypes
+				-- without an installed parser quiet.
+				pcall(vim.treesitter.start, args.buf)
 
-                -- Automatically install missing parsers when entering buffer
-                -- Recommendation: set to false if you don"t have `tree-sitter` CLI installed locally
-                auto_install = true,
-
-                indent = {
-                    enable = true
-                },
-
-                highlight = {
-                    -- `false` will disable the whole extension
-                    enable = true,
-
-                    -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
-                    -- Set this to `true` if you depend on "syntax" being enabled (like for indentation).
-                    -- Using this option may slow down your editor, and you may see some duplicate highlights.
-                    -- Instead of true it can also be a list of languages
-                    additional_vim_regex_highlighting = { "markdown" },
-                },
-            })
-        end
+				-- Tree-sitter indentation (experimental on main). Preserves the
+				-- old `indent = { enable = true }`. Drop this line to fall back
+				-- to Vim's built-in indent if it misbehaves.
+				vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+			end,
+		})
+	end,
 }

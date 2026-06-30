@@ -194,7 +194,11 @@ setup_base() {
     # TPM's install_plugins shells out to tmux against that server. apt install
     # (no remove) leaves the running server's binary path stable, so no mismatch.
     sudo apt install -y tmux
-    brew install neovim fzf go jj ripgrep nnn jjui
+    # tree-sitter-cli: required by nvim-treesitter (main branch) to compile
+    # language parsers from source. The npm/cargo routes don't work on the
+    # workspace (prebuilt binary needs a newer glibc; cargo build needs
+    # libclang), but the brew bottle links against linuxbrew's own glibc.
+    brew install neovim fzf go jj ripgrep nnn jjui tree-sitter-cli
     brew tap datadog-labs/pack
     brew install datadog-labs/pack/pup
     curl -Ls https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs | sh
