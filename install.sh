@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run order: precheck -> init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
+# Run order: init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
 set -e
 
 # Make brew non-interactive: skip auto-update, "Press RETURN" prompts, and the
@@ -52,6 +52,67 @@ stow_packages() {
 init() {
     echo "initializing..."
 
+    # --- prechecks: bail before doing any work if prerequisites are missing ---
+    # git-config-tool export must have been run from the laptop. The export
+    # copies ~/.config/datadog/git/ here and wires the gitconfig include +
+    # ssh_config Include that route ddoghq-sandbox clones (e.g. the pi packages
+    # in setup_pi) through the tausif-rahman_ddog managed identity. Without it
+    # those clones fail with "Repository not found".
+    local cfg_dir="$HOME/.config/datadog/git"
+    local ok=1
+    # Config files must be present on disk...
+    { [ -f "$cfg_dir/ssh_config" ] && grep -q 'ddoghq.github.com' "$cfg_dir/ssh_config"; } || ok=0
+    { [ -f "$cfg_dir/config" ]     && grep -q 'ddoghq-sandbox'    "$cfg_dir/config";     } || ok=0
+    # ...AND actually wired in (include resolves, ssh alias maps to the ghkey).
+    git config --get-regexp 'url\.git@ddoghq\.github\.com.*\.insteadof' >/dev/null 2>&1 || ok=0
+    ssh -G ddoghq.github.com 2>/dev/null | grep -qi 'identityfile.*ghkey' || ok=0
+    if [ "$ok" -ne 1 ]; then
+        cat >&2 <<EOF
+
+ERROR: git-config-tool export has not been run for this workspace.
+ddoghq-sandbox clones (e.g. datadog-pi-packages) will fail without it.
+
+Run this FROM YOUR LAPTOP, then re-run install.sh:
+
+    git config-tool export workspace-$(hostname -s 2>/dev/null || hostname)
+
+EOF
+        exit 1
+    fi
+    echo "git-config-tool export OK."
+
+    # gh is preinstalled on the workspace — upgrade the system package in place
+    # rather than installing a separate brew-managed gh.
+    if ! command -v gh >/dev/null 2>&1; then
+        echo "ERROR: gh not found on this system (expected it to be preinstalled)." >&2
+        exit 1
+    fi
+    sudo apt-get install -y --only-upgrade gh >/dev/null 2>&1 || true
+
+    # Both GitHub accounts must be logged in: the primary (tausman) and the
+    # Datadog managed identity (tausif-rahman_ddog, for ddoghq-sandbox repos).
+    # gh auth login picks up whichever account you authenticate as in the
+    # browser, so verify each by name and only run the flow for a missing one.
+    # -w opens a browser, -c copies the device code; keys/signing come from the
+    # forwarded agent so skip gh's key prompt.
+    for acct in tausman tausif-rahman_ddog; do
+        if gh auth status 2>/dev/null | grep -q "account $acct"; then
+            echo "gh: $acct already logged in."
+        else
+            echo "gh: $acct not logged in — starting login flow."
+            echo "  >>> Authenticate as $acct in the browser <<<"
+            gh auth login -h github.com -p ssh --skip-ssh-key -w -c
+            gh auth status 2>/dev/null | grep -q "account $acct" || {
+                echo "ERROR: still not logged in as $acct (did you pick the right account?)." >&2
+                exit 1
+            }
+        fi
+    done
+    # Leave the primary account active for the rest of the flow.
+    gh auth switch -h github.com -u tausman
+    echo "gh accounts OK."
+    # --- end prechecks ---
+
     # jj signs commits (signing.behavior="own") with the public key file at
     # ~/.ssh/id_ed25519.pub. We don't keep keys on the workspace — the private
     # key lives on the laptop and reaches us via the forwarded agent — but jj
@@ -68,25 +129,7 @@ init() {
     # this bash process never sources ~/.zshenv where the persistent setup lives).
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
-    # github config
-    brew install gh
-    if ! gh auth status &>/dev/null; then
-        # Two GitHub accounts are needed: the primary (tausman) and the Datadog
-        # managed identity (tausif-rahman_ddog, for ddoghq-sandbox repos). SSH
-        # keys and commit signing come from the laptop via the forwarded agent
-        # (config-tool runs only there), so this workspace needs no keys of its
-        # own — skip gh's key prompt. -w opens a browser, -c copies the device code.
-        echo "Log in with your PRIMARY GitHub account (tausman):"
-        gh auth login -h github.com -p ssh --skip-ssh-key -w -c
-
-        echo "Now log in again with the DATADOG MANAGED IDENTITY (tausif-rahman_ddog):"
-        gh auth login -h github.com -p ssh --skip-ssh-key -w -c
-
-        # Leave the primary account active for the rest of the flow.
-        gh auth switch -h github.com -u tausman
-    else
-        echo "gh already authenticated, skipping..."
-    fi
+    # gh install + account login is handled in the prechecks at the top of init.
     echo "init complete"
     echo "Run: source ~/.zshrc"
 }
@@ -280,41 +323,7 @@ setup_dogweb() {
     echo "Dogweb setup complete."
 }
 
-# Verify `git config-tool export <this-workspace>` has been run from the laptop.
-# The export copies ~/.config/datadog/git/ here and wires the gitconfig include +
-# ssh_config Include that route ddoghq-sandbox clones (e.g. the pi packages in
-# setup_pi) through the tausif-rahman_ddog managed identity. Without it those
-# clones fail with "Repository not found", so fail fast with instructions.
-precheck() {
-    echo "Prechecking git-config-tool export..."
-    local cfg_dir="$HOME/.config/datadog/git"
-    local ok=1
-
-    # Config files must be present on disk...
-    { [ -f "$cfg_dir/ssh_config" ] && grep -q 'ddoghq.github.com' "$cfg_dir/ssh_config"; } || ok=0
-    { [ -f "$cfg_dir/config" ]     && grep -q 'ddoghq-sandbox'    "$cfg_dir/config";     } || ok=0
-    # ...AND actually wired in (include resolves, ssh alias maps to the ghkey).
-    git config --get-regexp 'url\.git@ddoghq\.github\.com.*\.insteadof' >/dev/null 2>&1 || ok=0
-    ssh -G ddoghq.github.com 2>/dev/null | grep -qi 'identityfile.*ghkey' || ok=0
-
-    if [ "$ok" -ne 1 ]; then
-        cat >&2 <<EOF
-
-ERROR: git-config-tool export has not been run for this workspace.
-ddoghq-sandbox clones (e.g. datadog-pi-packages) will fail without it.
-
-Run this FROM YOUR LAPTOP, then re-run install.sh:
-
-    git config-tool export workspace-$(hostname -s 2>/dev/null || hostname)
-
-EOF
-        exit 1
-    fi
-    echo "git-config-tool export OK."
-}
-
 run_all() {
-    precheck
     init
     move_originals
     stow_packages
@@ -334,7 +343,6 @@ EOF
 
 case "${1:-stow}" in
     all)            run_all ;;
-    precheck)       precheck ;;
     init)           init ;;
     move-originals) move_originals ;;
     stow)           stow_packages ;;
@@ -344,5 +352,5 @@ case "${1:-stow}" in
     claude)         setup_claude ;;
     pi)             setup_pi ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|precheck|init|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
 esac
