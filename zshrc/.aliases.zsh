@@ -162,6 +162,11 @@ alias ja='jj abandon'
 alias jshow='jj show'
 alias jdiff='jj diff'
 
+# ssh aliases
+# Connect to a workspace WITH the tmux auth bootstrap (RemoteCommand). Plain
+# `ssh` skips it — see ~/.ssh/workspaces/01-auth.config (gated on WS_TMUX).
+alias wssh='WS_TMUX=1 ssh'
+
 n()
 {
     # Block nesting of nnn in subshells

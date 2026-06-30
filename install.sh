@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run order: init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
+# Run order: precheck -> init -> move_originals -> stow -> base -> repos -> web-ui -> dogweb
 set -e
 
 # Make brew non-interactive: skip auto-update, "Press RETURN" prompts, and the
@@ -280,7 +280,41 @@ setup_dogweb() {
     echo "Dogweb setup complete."
 }
 
+# Verify `git config-tool export <this-workspace>` has been run from the laptop.
+# The export copies ~/.config/datadog/git/ here and wires the gitconfig include +
+# ssh_config Include that route ddoghq-sandbox clones (e.g. the pi packages in
+# setup_pi) through the tausif-rahman_ddog managed identity. Without it those
+# clones fail with "Repository not found", so fail fast with instructions.
+precheck() {
+    echo "Prechecking git-config-tool export..."
+    local cfg_dir="$HOME/.config/datadog/git"
+    local ok=1
+
+    # Config files must be present on disk...
+    { [ -f "$cfg_dir/ssh_config" ] && grep -q 'ddoghq.github.com' "$cfg_dir/ssh_config"; } || ok=0
+    { [ -f "$cfg_dir/config" ]     && grep -q 'ddoghq-sandbox'    "$cfg_dir/config";     } || ok=0
+    # ...AND actually wired in (include resolves, ssh alias maps to the ghkey).
+    git config --get-regexp 'url\.git@ddoghq\.github\.com.*\.insteadof' >/dev/null 2>&1 || ok=0
+    ssh -G ddoghq.github.com 2>/dev/null | grep -qi 'identityfile.*ghkey' || ok=0
+
+    if [ "$ok" -ne 1 ]; then
+        cat >&2 <<EOF
+
+ERROR: git-config-tool export has not been run for this workspace.
+ddoghq-sandbox clones (e.g. datadog-pi-packages) will fail without it.
+
+Run this FROM YOUR LAPTOP, then re-run install.sh:
+
+    git config-tool export workspace-$(hostname -s 2>/dev/null || hostname)
+
+EOF
+        exit 1
+    fi
+    echo "git-config-tool export OK."
+}
+
 run_all() {
+    precheck
     init
     move_originals
     stow_packages
@@ -300,6 +334,7 @@ EOF
 
 case "${1:-stow}" in
     all)            run_all ;;
+    precheck)       precheck ;;
     init)           init ;;
     move-originals) move_originals ;;
     stow)           stow_packages ;;
@@ -309,5 +344,5 @@ case "${1:-stow}" in
     claude)         setup_claude ;;
     pi)             setup_pi ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|precheck|init|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
 esac

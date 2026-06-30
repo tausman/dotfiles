@@ -57,4 +57,7 @@
 	helper =
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
 [include]
+	# Both paths listed so the ddoghq rewrites resolve on the laptop and the
+	# Linux workspace; git silently ignores whichever path doesn't exist.
 	path = /Users/tausif.rahman/.config/datadog/git/config
+	path = /home/bits/.config/datadog/git/config
