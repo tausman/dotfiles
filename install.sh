@@ -385,6 +385,13 @@ setup_pi() {
 setup_dogweb() {
     echo "Setting up dogweb..."
     cd ~/dd/dogweb
+
+    # Bring up dogweb's local service dependencies (databases, etc.) before
+    # update_deps wires everything together. `-d --wait` starts the stack in the
+    # background but blocks until the containers are healthy, so update_deps only
+    # runs once they're up.
+    dd-compose up -d --wait
+
     update_deps
     # This doesn't work in the script
     # pytest dogweb/tests/unit/util/test_signup.py
