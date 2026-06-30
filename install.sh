@@ -179,14 +179,23 @@ setup_base() {
     echo "Run: source ~/.zshrc"
 }
 
+# Volta-managed node/npm, needed by both setup_pi (global npm install) and
+# setup_web_ui (pinned node). Idempotent and order-independent — safe to call
+# from either. Exports persist to later steps in the same `all` run, and make
+# standalone `./install.sh pi` / `web-ui` work too.
+setup_node() {
+    brew install volta
+    export VOLTA_HOME="$HOME/.volta"
+    export PATH="$VOLTA_HOME/bin:$PATH"
+    # Ensure a default node/npm exists; web-ui pins its own version separately.
+    command -v node >/dev/null 2>&1 || volta install node
+}
+
 setup_web_ui() {
     echo "Setting up web-ui development environment..."
     cd ~/dd/web-ui
 
-    # Install volta
-    brew install volta
-    export VOLTA_HOME="$HOME/.volta"
-    export PATH="$VOLTA_HOME/bin:$PATH"
+    setup_node
 
     # Install the Node version web-ui pins (.node-version / package.json "volta").
     # Without this, volta falls back to an older default Node that's too old for
@@ -309,6 +318,7 @@ setup_claude() {
 
 setup_pi() {
     echo "Setting up pi..."
+    setup_node
     npm install -g --ignore-scripts @earendil-works/pi-coding-agent
     echo "pi setup complete."
 }
