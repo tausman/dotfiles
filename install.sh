@@ -154,8 +154,8 @@ EOF
             }
         fi
     done
-    # Leave the primary account active for the rest of the flow.
-    gh auth switch -h github.com -u tausman
+    # Leave the Datadog managed identity active for the rest of the flow.
+    gh auth switch -h github.com -u tausif-rahman_ddog
     echo "gh accounts OK."
     # --- end prechecks ---
 
