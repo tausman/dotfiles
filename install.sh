@@ -49,6 +49,52 @@ stow_packages() {
     echo "Run: source ~/.zshrc"
 }
 
+# Repos are migrating from the DataDog GitHub org to the new ddoghq org, so on
+# the workspace their checkouts live under ~/go/src/github.com/ddoghq/. Tooling
+# (and ~/dd, a symlink to .../DataDog) still references them at the DataDog path,
+# so symlink each ddoghq repo into the DataDog tree. Done generically — every
+# directory under ddoghq/ is linked, so future migrations are picked up with no
+# code change. If a repo exists as a real checkout in BOTH orgs the situation is
+# ambiguous, so bail and let the user remove the stale DataDog copy.
+link_ddoghq_repos() {
+    echo "Linking ddoghq repos into the DataDog tree..."
+    local ddoghq_dir="$HOME/go/src/github.com/ddoghq"
+    local datadog_dir="$HOME/go/src/github.com/DataDog"
+
+    if [ ! -d "$ddoghq_dir" ]; then
+        echo "  No $ddoghq_dir — nothing to link."
+        return
+    fi
+
+    local src name dst
+    for src in "$ddoghq_dir"/*; do
+        [ -d "$src" ] || continue          # only repo directories
+        name=$(basename "$src")
+        dst="$datadog_dir/$name"
+
+        if [ -L "$dst" ]; then
+            # Our own symlink from a previous run — repoint it (idempotent).
+            ln -sfn "$src" "$dst"
+            echo "  Relinked $name -> ddoghq"
+        elif [ -e "$dst" ]; then
+            # A real DataDog checkout coexists with the ddoghq one — ambiguous.
+            cat >&2 <<EOF
+
+ERROR: '$name' exists as a real checkout in BOTH orgs:
+  ddoghq:  $src
+  DataDog: $dst
+This repo has migrated to ddoghq. Remove the stale DataDog copy and re-run:
+  rm -rf "$dst"
+
+EOF
+            exit 1
+        else
+            ln -sfn "$src" "$dst"
+            echo "  Linked $name -> ddoghq"
+        fi
+    done
+}
+
 init() {
     echo "initializing..."
 
@@ -112,6 +158,10 @@ EOF
     gh auth switch -h github.com -u tausman
     echo "gh accounts OK."
     # --- end prechecks ---
+
+    # Make repos that migrated to the ddoghq org resolve at their old DataDog
+    # paths (and under ~/dd). Runs after gh login so auth is already sorted.
+    link_ddoghq_repos
 
     # jj signs commits (signing.behavior="own") with the public key file at
     # ~/.ssh/id_ed25519.pub. We don't keep keys on the workspace — the private
