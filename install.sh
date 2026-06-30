@@ -202,13 +202,22 @@ setup_web_ui() {
     # web-ui's tooling (oxfmt needs the pinned 24.x to load its .ts config).
     volta install "node@$(cat .node-version)"
 
-    # Install yarn switch
+    # Install Yarn Switch (per-project yarn version manager)
     curl -sS https://repo.yarnpkg.com/install | bash
     export PATH="$HOME/.yarn/switch/bin:$PATH"
 
-    yarn
+    # Drop volta's yarn shims first so yarn-switch's yarn wins on PATH.
     rm -f ~/.volta/bin/yarn ~/.volta/bin/yarnpkg
-    yarn install
+
+    # Install web-ui deps (large monorepo, multi-GB). Retry to ride out flaky
+    # registry fetches like "Network error: error decoding response body".
+    local attempt ok=0
+    for attempt in 1 2 3; do
+        if yarn install; then ok=1; break; fi
+        echo "yarn install failed (attempt $attempt/3), retrying in 5s..."
+        sleep 5
+    done
+    [ "$ok" -eq 1 ] || { echo "yarn install failed after 3 attempts" >&2; exit 1; }
 
     bash ./dev/ssl/generate_and_trust_localhost_certificate.sh
     brew install watchman
