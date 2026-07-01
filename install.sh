@@ -421,27 +421,56 @@ EOF
     echo "Run: source ~/.zshrc"
 }
 
+# Repos setup_repos knows how to configure (basenames under ~/dd). Also the set of
+# valid values for the optional single-repo argument.
+REPOS=(dd-source dd-go dogweb web-ui team-aaa-internal-tools datadog-pi-packages)
+
+# Abort unless $1 is empty (meaning all repos) or a known repo basename.
+validate_repo() {
+    [ -z "$1" ] && return 0
+    printf '%s\n' "${REPOS[@]}" | grep -qxF "$1" || {
+        echo "ERROR: unknown repo '$1'. Valid: ${REPOS[*]}" >&2
+        exit 1
+    }
+}
+
+# setup_repos [repo]: configure fetch refs + colocate jj for the dd/* repos. With
+# an optional <repo> basename (e.g. dd-source) only that one is cloned/configured —
+# a fast path when you just need a single repo ready.
 setup_repos() {
-    echo "Setting up repo fetch configs..."
+    local only="$1"
+    validate_repo "$only"
+    if [ -n "$only" ]; then
+        echo "Setting up repo fetch config for '$only' only..."
+    else
+        echo "Setting up repo fetch configs..."
+    fi
 
     # Clone repos that aren't checked out by other tooling. The dd/* monorepos
-    # are expected to already exist; these we fetch ourselves.
-    [ -d ~/dd/team-aaa-internal-tools/.git ] || \
-        git clone git@github.com:DataDog/team-aaa-internal-tools.git ~/dd/team-aaa-internal-tools
+    # are expected to already exist; these we fetch ourselves. Skipped when a
+    # different single repo was requested.
+    if [ -z "$only" ] || [ "$only" = team-aaa-internal-tools ]; then
+        [ -d ~/dd/team-aaa-internal-tools/.git ] || \
+            git clone git@github.com:DataDog/team-aaa-internal-tools.git ~/dd/team-aaa-internal-tools
+        # Expose the acepg postgres-access helper (a git-tracked bash script) on
+        # PATH, mirroring the local ~/.local/bin/acepg symlink.
+        mkdir -p ~/.local/bin
+        ln -sf ~/dd/team-aaa-internal-tools/postgres-access-tool/acepg ~/.local/bin/acepg
+    fi
 
     # pi coding agent packages — lives in the ddoghq-sandbox org, accessed via the
     # tausif-rahman_ddog managed identity.
-    [ -d ~/dd/datadog-pi-packages/.git ] || \
-        git clone git@github.com:ddoghq-sandbox/datadog-pi-packages.git ~/dd/datadog-pi-packages
-
-    # Expose the acepg postgres-access helper (a git-tracked bash script) on
-    # PATH, mirroring the local ~/.local/bin/acepg symlink.
-    mkdir -p ~/.local/bin
-    ln -sf ~/dd/team-aaa-internal-tools/postgres-access-tool/acepg ~/.local/bin/acepg
+    if [ -z "$only" ] || [ "$only" = datadog-pi-packages ]; then
+        [ -d ~/dd/datadog-pi-packages/.git ] || \
+            git clone git@github.com:ddoghq-sandbox/datadog-pi-packages.git ~/dd/datadog-pi-packages
+    fi
 
     local repos=(~/dd/dd-source ~/dd/dd-go ~/dd/dogweb ~/dd/web-ui ~/dd/team-aaa-internal-tools ~/dd/datadog-pi-packages)
 
     for repo in "${repos[@]}"; do
+        if [ -n "$only" ] && [ "$(basename "$repo")" != "$only" ]; then
+            continue
+        fi
         if [ ! -d "$repo/.git" ]; then
             echo "Skipping $repo (not a git repo)"
             continue
@@ -537,16 +566,25 @@ setup_dogweb() {
     echo "Dogweb setup complete."
 }
 
+# run_all [repo]: full install. With an optional <repo>, setup_repos handles only
+# that repo and the heavy web-ui/dogweb steps run only when they're the target —
+# a much faster path when you just need one repo ready.
 run_all() {
+    local only="$1"
+    validate_repo "$only"   # fail fast, before the long install
     init
     move_originals
     stow_packages
     setup_base
-    setup_repos
+    setup_repos "$only"
     setup_claude
     setup_pi
-    setup_web_ui
-    setup_dogweb
+    if [ -z "$only" ] || [ "$only" = web-ui ]; then
+        setup_web_ui
+    fi
+    if [ -z "$only" ] || [ "$only" = dogweb ]; then
+        setup_dogweb
+    fi
     echo "Run: source ~/.zshrc"
     cat <<'EOF'
     DONT FORGET TO RUN ON THE HOST:
@@ -556,16 +594,16 @@ EOF
 }
 
 case "${1:-stow}" in
-    all)            run_all ;;
+    all)            run_all "$2" ;;
     init)           init ;;
     auth)           setup_auth ;;
     move-originals) move_originals ;;
     stow)           stow_packages ;;
     base)           setup_base ;;
-    repos)          setup_repos ;;
+    repos)          setup_repos "$2" ;;
     web-ui)         setup_web_ui ;;
     claude)         setup_claude ;;
     pi)             setup_pi ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|init|auth|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all [repo]|init|auth|move-originals|stow|base|repos [repo]|web-ui|claude|pi|dogweb}" && exit 1 ;;
 esac
