@@ -31,6 +31,31 @@ move_originals() {
     echo "Done moving originals."
 }
 
+# Our custom ssh config (custom/github-keys.config) only takes effect if
+# ~/.ssh/config Includes it. The laptop gets an `Include ~/.ssh/workspaces/*` from
+# the workspaces CLI, but the workspace host has no such include — so ssh never
+# reads our fallback identities and git breaks when the forwarded agent is gone.
+# ssh has no auto-included drop-in dir, so add the Include ourselves: once,
+# idempotently (skip if grep already finds it), prepended so it sits at top level
+# (before any Host block) and our on-disk keys are offered ahead of the managed
+# ghkeys. Any existing ~/.ssh/config is preserved verbatim (contents and perms).
+ensure_ssh_custom_include() {
+    local cfg="$HOME/.ssh/config"
+    mkdir -p "$HOME/.ssh"
+    touch "$cfg"
+    if grep -qF 'Include ~/.ssh/custom/*' "$cfg"; then
+        echo "ssh config already includes ~/.ssh/custom/*"
+        return
+    fi
+    # Prepend the include. Build the new file in a temp, then overwrite in place
+    # (`cat > "$cfg"`, not mv) so the original file's mode/inode are kept.
+    local tmp="$cfg.tmp.$$"
+    { echo 'Include ~/.ssh/custom/*'; echo; cat "$cfg"; } > "$tmp"
+    cat "$tmp" > "$cfg"
+    rm -f "$tmp"
+    echo "Added 'Include ~/.ssh/custom/*' to ~/.ssh/config."
+}
+
 stow_packages() {
     brew install stow
     cd ~/dotfiles
@@ -42,6 +67,8 @@ stow_packages() {
             stow -R -d "$DOTFILES_DIR" -t "$HOME" --dotfiles "$pkg"
         fi
     done
+    # Make the stowed custom/ ssh config actually load (add the Include if needed).
+    ensure_ssh_custom_include
     echo "Done stowing packages."
     # Reload tmux config into any running server so changes take effect without
     # restarting tmux (no-op if no server is running).
@@ -137,7 +164,7 @@ setup_auth() {
     # Per-account on-disk SSH keys. Git normally rides the forwarded agent (keys
     # live on the laptop), which dies when the laptop sleeps. So each account also
     # gets its own keypair on this machine: github.com authenticates as tausman and
-    # ddoghq.github.com as tausif-rahman_ddog (see 05-github-keys.config, which
+    # ddoghq.github.com as tausif-rahman_ddog (see custom/github-keys.config, which
     # appends these as fallback identities). tausman's key additionally signs
     # commits. All helpers below act on the currently-active gh account.
     ensure_scope() {  # ensure_scope <scope>
