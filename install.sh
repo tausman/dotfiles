@@ -95,6 +95,134 @@ EOF
     done
 }
 
+# GitHub auth + keys for both accounts (tausman and the tausif-rahman_ddog managed
+# identity). Generates a per-machine keypair for each account, uploads the public
+# halves (auth for both, signing for tausman), records signing trust, and walks
+# through SSO authorization. Runs standalone (`install.sh auth`) so it works the
+# same on the laptop and the workspace. Idempotent — existing keys, uploads, and
+# scopes are detected and skipped. Private keys never leave the machine.
+setup_auth() {
+    echo "Setting up GitHub auth + signing keys..."
+    command -v gh >/dev/null 2>&1 || {
+        echo "ERROR: gh (GitHub CLI) not found — install it first." >&2
+        exit 1
+    }
+
+    # `timeout` guards the SSO probe from hanging. macOS lacks it, so fall back to
+    # coreutils' gtimeout, or run without a limit.
+    run_timeout() {  # run_timeout <secs> <cmd...>
+        if command -v timeout >/dev/null 2>&1; then timeout "$@"
+        elif command -v gtimeout >/dev/null 2>&1; then gtimeout "$@"
+        else shift; "$@"; fi
+    }
+
+    # Both accounts must be logged in: the primary (tausman) and the Datadog
+    # managed identity (tausif-rahman_ddog). gh auth login picks up whichever
+    # account you authenticate as in the browser, so verify each by name and only
+    # run the flow for a missing one. -w opens a browser, -c copies the code.
+    for acct in tausman tausif-rahman_ddog; do
+        if gh auth status 2>/dev/null | grep -q "account $acct"; then
+            echo "gh: $acct already logged in."
+        else
+            echo "gh: $acct not logged in — starting login flow."
+            echo "  >>> Authenticate as $acct in the browser <<<"
+            gh auth login -h github.com -p ssh --skip-ssh-key -w -c
+            gh auth status 2>/dev/null | grep -q "account $acct" || {
+                echo "ERROR: still not logged in as $acct (did you pick the right account?)." >&2
+                exit 1
+            }
+        fi
+    done
+
+    # Per-account on-disk SSH keys. Git normally rides the forwarded agent (keys
+    # live on the laptop), which dies when the laptop sleeps. So each account also
+    # gets its own keypair on this machine: github.com authenticates as tausman and
+    # ddoghq.github.com as tausif-rahman_ddog (see 05-github-keys.config, which
+    # appends these as fallback identities). tausman's key additionally signs
+    # commits. All helpers below act on the currently-active gh account.
+    ensure_scope() {  # ensure_scope <scope>
+        gh auth status --active 2>&1 | grep -q "'$1'" || {
+            echo "  Adding token scope '$1' (opens browser)..."
+            gh auth refresh -h github.com -s "$1"
+        }
+    }
+    key_on_account() {  # key_on_account <pubfile> <api-path> — already uploaded?
+        gh api "$2" --jq '.[].key' 2>/dev/null | grep -qF "$(awk '{print $1, $2}' "$1")"
+    }
+    upload_key() {  # upload_key <pubfile> <authentication|signing>
+        local api=/user/keys; [ "$2" = signing ] && api=/user/ssh_signing_keys
+        if key_on_account "$1" "$api"; then
+            echo "  $2 key already uploaded — skipping."
+        else
+            gh ssh-key add "$1" --type "$2" --title "$(hostname -s) $(basename "$1") ($2)"
+            echo "  Uploaded $2 key ($(basename "$1"))."
+        fi
+    }
+    key_can_access() {  # key_can_access <keyfile> <owner/repo> — SSO-authorized + access?
+        run_timeout 20 ssh -F /dev/null -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            -i "$1" git@github.com "git-upload-pack '$2.git'" </dev/null >/dev/null 2>&1
+    }
+    ensure_sso() {  # ensure_sso <account> <keyfile> <org> <owner/repo>
+        # Smart: skip entirely if the key already works. Interactive otherwise —
+        # point at the authorize page, wait for Enter, re-verify in a loop. SAML
+        # SSO for a new SSH key cannot be granted from the CLI.
+        if key_can_access "$2" "$4"; then
+            echo "  SSO OK: $(basename "$2") can reach $4."
+            return 0
+        fi
+        if [ ! -t 0 ]; then
+            echo "  WARNING: $(basename "$2") can't reach $4 — authorize '$3' at" >&2
+            echo "           https://github.com/settings/keys (non-interactive; skipping)." >&2
+            return 0
+        fi
+        echo
+        echo "  >>> SSO NEEDED for $1 <<<"
+        echo "  Key '$(basename "$2")' isn't authorized for the '$3' org yet."
+        echo "    1. Open   https://github.com/settings/keys"
+        echo "    2. Find   '$(hostname -s) $(basename "$2") (authentication)'"
+        echo "    3. Click  'Configure SSO' and authorize '$3'."
+        while true; do
+            read -r -p "  Press Enter to re-check (or 's' to skip): " ans || ans=s
+            [ "$ans" = s ] && { echo "  Skipped SSO for $1 — git over this key may fail while the lid is closed."; return 0; }
+            if key_can_access "$2" "$4"; then
+                echo "  Verified: $(basename "$2") can now reach $4."
+                return 0
+            fi
+            echo "  Still no access — confirm you authorized '$3' for this exact key."
+        done
+    }
+    setup_account_key() {  # setup_account_key <account> <keyfile> <sign|nosign> <org> <owner/repo>
+        echo "Setting up SSH key for $1..."
+        gh auth switch -h github.com -u "$1"
+        ensure_scope admin:public_key
+        [ -f "$2" ] || ssh-keygen -t ed25519 -C "tausif.rahman@datadoghq.com" -f "$2" -N ""
+        upload_key "$2.pub" authentication
+        if [ "$3" = sign ]; then
+            ensure_scope admin:ssh_signing_key
+            upload_key "$2.pub" signing
+        fi
+        ensure_sso "$1" "$2" "$4" "$5"
+    }
+
+    setup_account_key tausman            ~/.ssh/id_ed25519_tausman sign   DataDog        DataDog/team-aaa-internal-tools
+    setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    nosign ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
+
+    # The signing key lives on tausman only: GitHub rejects the same SSH key on a
+    # second account ("key is already in use"), so it can't be shared with the ddog
+    # account. That's fine — every commit is signed with the tausman key, and
+    # GitHub verifies against whichever account holds the commit's verified email
+    # (tausif.rahman@datadoghq.com is on tausman, which also has DataDog org access).
+
+    # Trust the signing key locally so jj/git can verify our own commits.
+    mkdir -p ~/.ssh
+    grep -qF "$(cat ~/.ssh/id_ed25519_tausman.pub)" ~/.ssh/allowed_signers 2>/dev/null || \
+        echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519_tausman.pub)" >> ~/.ssh/allowed_signers
+
+    # Leave the Datadog managed identity active for the rest of the flow.
+    gh auth switch -h github.com -u tausif-rahman_ddog
+    echo "gh accounts + keys OK."
+}
+
 init() {
     echo "initializing..."
 
@@ -135,43 +263,18 @@ EOF
     fi
     sudo apt-get install -y --only-upgrade gh >/dev/null 2>&1 || true
 
-    # Both GitHub accounts must be logged in: the primary (tausman) and the
-    # Datadog managed identity (tausif-rahman_ddog, for ddoghq-sandbox repos).
-    # gh auth login picks up whichever account you authenticate as in the
-    # browser, so verify each by name and only run the flow for a missing one.
-    # -w opens a browser, -c copies the device code; keys/signing come from the
-    # forwarded agent so skip gh's key prompt.
-    for acct in tausman tausif-rahman_ddog; do
-        if gh auth status 2>/dev/null | grep -q "account $acct"; then
-            echo "gh: $acct already logged in."
-        else
-            echo "gh: $acct not logged in — starting login flow."
-            echo "  >>> Authenticate as $acct in the browser <<<"
-            gh auth login -h github.com -p ssh --skip-ssh-key -w -c
-            gh auth status 2>/dev/null | grep -q "account $acct" || {
-                echo "ERROR: still not logged in as $acct (did you pick the right account?)." >&2
-                exit 1
-            }
-        fi
-    done
-    # Leave the Datadog managed identity active for the rest of the flow.
-    gh auth switch -h github.com -u tausif-rahman_ddog
-    echo "gh accounts OK."
+    # GitHub accounts, per-account SSH keys, commit-signing key, and SSO — all in
+    # the standalone auth step so it can also be run on its own (`install.sh auth`).
+    setup_auth
     # --- end prechecks ---
 
     # Make repos that migrated to the ddoghq org resolve at their old DataDog
     # paths (and under ~/dd). Runs after gh login so auth is already sorted.
     link_ddoghq_repos
 
-    # jj signs commits (signing.behavior="own") with the public key file at
-    # ~/.ssh/id_ed25519.pub. We don't keep keys on the workspace — the private
-    # key lives on the laptop and reaches us via the forwarded agent — but jj
-    # still needs the *public* key file on disk to sign, or `jj git init` fails
-    # with "Couldn't load public key ... No such file or directory". Pull it from
-    # the forwarded agent (the grep matches only the tausman signing key).
-    mkdir -p ~/.ssh
-    pubkey=$(ssh-add -L 2>/dev/null | grep 'tausif.rahman@datadoghq.com')
-    [ -n "$pubkey" ] && printf '%s\n' "$pubkey" > ~/.ssh/id_ed25519.pub
+    # jj/git sign commits (signing.behavior="own") with ~/.ssh/id_ed25519_tausman.pub,
+    # which is generated and uploaded (auth + signing) in the per-account key setup
+    # above — so no key needs to be pulled from the forwarded agent anymore.
 
     # Install linuxbrew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -428,6 +531,7 @@ EOF
 case "${1:-stow}" in
     all)            run_all ;;
     init)           init ;;
+    auth)           setup_auth ;;
     move-originals) move_originals ;;
     stow)           stow_packages ;;
     base)           setup_base ;;
@@ -436,5 +540,5 @@ case "${1:-stow}" in
     claude)         setup_claude ;;
     pi)             setup_pi ;;
     dogweb)         setup_dogweb ;;
-    *)              echo "Usage: $0 {all|init|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
+    *)              echo "Usage: $0 {all|init|auth|move-originals|stow|base|repos|web-ui|claude|pi|dogweb}" && exit 1 ;;
 esac
