@@ -317,6 +317,12 @@ EOF
 setup_base() {
     echo "Setting up base tools..."
 
+    # Keep ddtool (workspace-managed Datadog CLI) current. Guarded so it no-ops
+    # off-workspace (e.g. the laptop) and a failed update doesn't abort the run.
+    if command -v update-tool >/dev/null 2>&1; then
+        update-tool ddtool || echo "  update-tool ddtool failed (continuing)"
+    fi
+
     # core tools
     # Keep tmux as the distro-managed package instead of swapping in a brew one.
     # Installing a brew tmux while attached to a running (apt) tmux server breaks:
@@ -555,9 +561,9 @@ setup_dogweb() {
     # runs once they're up.
     #
     # `dd-compose` is an interactive shell alias (see /etc/profile.d/00-workspace-env.sh)
-    # and isn't available in this non-interactive script, so we inline what it
-    # expands to. $DD_COMPOSE is exported there, so it's inherited here.
-    docker-compose -f "$DD_COMPOSE" up -d --wait
+    # that isn't available in this non-interactive script, so point docker-compose
+    # directly at the workspace compose file shipped in dd-source.
+    docker-compose -f "$HOME/dd/dd-source/domains/devex/workspaces/apps/shell-image/etc/container-config/compose.yaml" up -d --wait
 
     update_deps
     # This doesn't work in the script

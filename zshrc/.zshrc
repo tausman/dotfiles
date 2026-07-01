@@ -234,12 +234,10 @@ if [[ "$(uname)" == "Darwin" ]]; then
     export GPG_TTY=$(tty)
 fi
 
-# Added by Yarn Switch
-if [[ "$(uname)" == "Darwin" ]]; then
-    source "/Users/tausif.rahman/.yarn/switch/env"
-elif [[ "$(uname)" == "Linux" ]]; then
-    source "/home/bits/.yarn/switch/env"
-fi
+# Added by Yarn Switch. Guarded: the env file only exists once Yarn Switch is
+# installed (web-ui setup), so a single-repo install like `install.sh all dd-source`
+# won't have it — source it only if present instead of erroring on startup.
+[ -f "$HOME/.yarn/switch/env" ] && source "$HOME/.yarn/switch/env"
 
 . "$HOME/.cargo/env"
 
