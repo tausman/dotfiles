@@ -394,7 +394,11 @@ setup_dogweb() {
     # update_deps wires everything together. `-d --wait` starts the stack in the
     # background but blocks until the containers are healthy, so update_deps only
     # runs once they're up.
-    dd-compose up -d --wait
+    #
+    # `dd-compose` is an interactive shell alias (see /etc/profile.d/00-workspace-env.sh)
+    # and isn't available in this non-interactive script, so we inline what it
+    # expands to. $DD_COMPOSE is exported there, so it's inherited here.
+    docker-compose -f "$DD_COMPOSE" up -d --wait
 
     update_deps
     # This doesn't work in the script
