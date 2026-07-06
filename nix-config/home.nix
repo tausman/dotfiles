@@ -23,6 +23,7 @@
     neovim
     alacritty
     tmux
+    oh-my-zsh
     claude-code
   ];
 
@@ -33,6 +34,10 @@
   home.file.".gitconfig".source = ../git/.gitconfig;
   home.file.".git-template/config".source = ../git/.git-template/config;
   home.file.".gitignore".source = ../git/dot-gitignore;
+
+  home.file.".oh-my-zsh".source = "${pkgs.oh-my-zsh}/share/oh-my-zsh";
+
+  home.file.".config/tmux/dotfiles.tmux.conf".source = ../tmux/.tmux.conf;
 
   programs.zsh = {
     enable = true;
@@ -47,6 +52,21 @@
 
     initExtra = ''
       source ~/.config/zsh/dotfiles.zshrc
+    '';
+  };
+
+  programs.tmux = {
+    enable = true;
+  
+    plugins = with pkgs.tmuxPlugins; [
+      vim-tmux-navigator
+      resurrect
+      continuum
+      fzf-tmux-url
+    ];
+  
+    extraConfig = ''
+      source-file ~/.config/tmux/dotfiles.tmux.conf
     '';
   };
 }
