@@ -25,6 +25,8 @@
     tmux
     oh-my-zsh
     claude-code
+    (pkgs.writeScriptBin "tmux-sessionizer" (builtins.readFile ../scripts/.local/bin/tmux-sessionizer))
+    (pkgs.writeScriptBin "tmux-bootstrap-session" (builtins.readFile ../scripts/.local/bin/tmux-bootstrap-session))
   ];
 
   home.file.".config/zsh/dotfiles.zshrc".source = ../zshrc/.zshrc;
@@ -38,6 +40,7 @@
   home.file.".oh-my-zsh".source = "${pkgs.oh-my-zsh}/share/oh-my-zsh";
 
   home.file.".config/tmux/dotfiles.tmux.conf".source = ../tmux/.tmux.conf;
+  home.file.".config/tmux-sessionizer/tmux-sessionizer.conf".source = ../config/.config/tmux-sessionizer/tmux-sessionizer.conf;
 
   programs.zsh = {
     enable = true;
