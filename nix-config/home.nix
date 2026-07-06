@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   home.username = "tausif.rahman";
@@ -30,18 +30,38 @@
     (pkgs.writeScriptBin "tmux-toggle-pane" (builtins.readFile ../scripts/.local/bin/tmux-toggle-pane))
   ];
 
+  # Add ~/.local/bin to PATH declaratively (home-manager writes this into the session
+  # vars its generated .zshenv sources). This is where stack installs kmonad and other
+  # user binaries. NOTE: the kmonad launchd daemon uses the absolute path, so this is
+  # only for running such binaries by name in a shell.
+  home.sessionPath = [ "$HOME/.local/bin" ];
+
   home.file.".config/zsh/dotfiles.zshrc".source = ../zshrc/.zshrc;
   home.file.".config/zsh/dotfiles.zshenv".source = ../zshrc/.zshenv;
   home.file.".aliases.zsh".source = ../zshrc/.aliases.zsh;
 
   home.file.".gitconfig".source = ../git/.gitconfig;
-  home.file.".git-template/config".source = ../git/.git-template/config;
   home.file.".gitignore".source = ../git/dot-gitignore;
+
+  # NOTE: do NOT manage ~/.git-template/config via home.file. git copies
+  # init.templateDir into every new repo's .git/ and PRESERVES symlinks, so a
+  # symlink into the read-only nix store makes every new .git/config unwritable
+  # ("could not lock config file" on git init/clone). Copy it in as a real,
+  # writable file instead.
+  home.activation.gitTemplateConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/.git-template"
+    run rm -f "$HOME/.git-template/config"
+    run cp ${../git/.git-template/config} "$HOME/.git-template/config"
+    run chmod 644 "$HOME/.git-template/config"
+  '';
 
   home.file.".oh-my-zsh".source = "${pkgs.oh-my-zsh}/share/oh-my-zsh";
 
   home.file.".config/tmux/dotfiles.tmux.conf".source = ../tmux/.tmux.conf;
   home.file.".config/tmux-sessionizer/tmux-sessionizer.conf".source = ../config/.config/tmux-sessionizer/tmux-sessionizer.conf;
+
+  # kmonad keyboard config, read by the launchd daemon defined in darwin.nix.
+  home.file.".config/kmonad.kbd".source = ../kmonad/kmonad.kbd;
 
   programs.zsh = {
     enable = true;

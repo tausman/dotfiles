@@ -21,7 +21,7 @@ elif [[ "$(uname)" == "Linux" ]]; then
     export HOMEBREW_DIR=/home/linuxbrew/.linuxbrew
     export HOMEBREW_BIN=/home/linuxbrew/.linuxbrew/bin
     export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH"
-    export PATH="~/.local/bin:$PATH"
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 
