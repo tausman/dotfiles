@@ -44,6 +44,7 @@
     ],
     "deny": []
   },
+  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -70,7 +71,8 @@
     "github@claude-plugins-official": true,
     "aaa-internal@datadog-claude-plugins": true,
     "mosaic@datadog-claude-plugins": true,
-    "tausman@tausman": true
+    "tausman@tausman": true,
+    "trajectory@trajectory": true
   },
   "extraKnownMarketplaces": {
     "datadog": {
@@ -85,6 +87,12 @@
         "url": "git@github.com:tausman/claude-plugins.git"
       },
       "autoUpdate": true
+    },
+    "trajectory": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/tausif.rahman/.trajectory/claude-marketplace"
+      }
     }
   },
   "forceLoginMethod": "console",
@@ -95,6 +103,5 @@
   "editorMode": "vim",
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
-  },
-  "model": "opus[1m]"
+  }
 }

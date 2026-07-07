@@ -78,15 +78,72 @@
       }
     ];
 
+    # git and go are also nix-managed in home.nix, but they're top-level brew installs
+    # (leaves) too — declared here for a faithful brew state. jq is only a brew
+    # dependency (not a leaf), so it's auto-resolved and intentionally not listed.
+    brews = [
+      # dev tools (from laptop-setup ansible)
+      "aws-vault"
+      "awscli"
+      "bazelisk"
+      "coreutils"
+      "direnv"
+      "gcc"
+      "gimme"
+      "git"
+      "gnupg"
+      "go"
+      "grep"
+      "helm"
+      "kubectx"
+      "make"
+      "mkcert"
+      "nss"
+      "pinentry"
+      "pre-commit"
+      "pyenv"
+      "rbenv"
+      "tfenv"
+      "wget"
+      # Datadog tap CLI tools
+      "datadog/tap/devkube"
+      "datadog/tap/docker-local-dev"
+      "datadog/tap/kubectl-analyse"
+      "datadog/tap/kubectl-iscale"
+      "datadog/tap/kubectl-multiexec"
+      "datadog/tap/kubectl-template"
+      "datadog/tap/latest-chart"
+      "datadog/tap/latest-datacenter-config"
+      "datadog/tap/latest-image"
+      "datadog/tap/sce"
+      "datadog/tap/to-prod"
+      "datadog/tap/to-staging"
+      "datadog/tap/trigger-ci"
+      "datadog/tap/vault"
+    ];
+
     casks = [
-      "datadog/tap/ddtool"
-      "datadog/tap/rapid"
+      "1password-cli"
+      "gcloud-cli"
+      # Datadog tap casks
+      "datadog/tap/atlas"
+      "datadog/tap/bzl"
       "datadog/tap/datadog-workspaces"
+      "datadog/tap/dd-gopls"
+      "datadog/tap/ddcall"
+      "datadog/tap/ddr"
+      "datadog/tap/ddtool"
+      "datadog/tap/git-dd"
+      "datadog/tap/rapid"
     ];
 
     onActivation = {
       autoUpdate = true;
-      cleanup = "zap";
+      # "none": nix-darwin won't remove Homebrew packages it doesn't manage. Needed
+      # because laptop-setup (ansible) installs lots of brew packages imperatively —
+      # "zap"/"uninstall" would delete them on every darwin-rebuild. Tighten back to
+      # "zap" only once everything you want is declared here.
+      cleanup = "none";
     };
   };
 }

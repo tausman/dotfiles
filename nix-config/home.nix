@@ -34,6 +34,7 @@ in
     oh-my-zsh
     claude-code
     jujutsu
+    jjui             # TUI for jj
     # Rust toolchain (nix-managed — cargo/rustc land on PATH directly, so there's no
     # rustup-style ~/.cargo/env; the zshrc sources that file only if it exists).
     rustc

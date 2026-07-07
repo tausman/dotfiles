@@ -183,6 +183,62 @@ PROMPT=$(echo $PROMPT | sed 's/%c%/%~%/')
 #     eval "$(rbenv init -)"
 # fi
 
+if [[ "$(uname)" == "Darwin" ]]; then
+    # export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
+    # export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
+    # export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
+    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
+elif [[ "$(uname)" == "Linux" ]]; then
+    # export GITLAB_TOKEN=$(pass show gitlab_token)
+    # export OPENAI_API_KEY=$(pass show openai_api_key)
+    # export ATLASSIAN_TOKEN=$(pass show atlassian_token)
+    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
+fi
+
+if [[ "$(uname)" == "Darwin" ]]; then
+    [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+    export GPG_TTY=$(tty)
+fi
+
+# Added by Yarn Switch. Guarded: the env file only exists once Yarn Switch is
+# installed (web-ui setup), so a single-repo install like `install.sh all dd-source`
+# won't have it — source it only if present instead of erroring on startup.
+[ -f "$HOME/.yarn/switch/env" ] && source "$HOME/.yarn/switch/env"
+
+# rustup writes ~/.cargo/env (Linux/stow box); nix puts cargo on PATH directly and
+# creates no such file — source it only if present so both setups work without error.
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Volta
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
+# BEGIN ANSIBLE MANAGED BLOCK
+# Load homebrew shell variables
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# Force certain more-secure behaviours from homebrew
+export HOMEBREW_NO_INSECURE_REDIRECT=1
+export HOMEBREW_CASK_OPTS=--require-sha
+export HOMEBREW_DIR=/opt/homebrew
+export HOMEBREW_BIN=/opt/homebrew/bin
+
+# Load python shims. --no-rehash skips the shim-directory rescan that
+# pyenv otherwise runs on every shell startup (a noticeable per-shell
+# cost); shims are still added to PATH. Run `pyenv rehash` manually after
+# installing a package that adds a new executable (e.g. a pip console
+# script).
+eval "$(pyenv init - --no-rehash)"
+
+# Load ruby shims. --no-rehash for the same reason; run `rbenv rehash`
+# after installing a gem that adds an executable.
+eval "$(rbenv init - --no-rehash)"
+
+# Load direnv hook
+eval "$(direnv hook zsh)"
+
+# Load git-dd completions for zsh
+autoload -Uz _git_dd
+
 # Prefer GNU binaries to Macintosh binaries.
 export PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
 
@@ -216,38 +272,8 @@ export HELM_DRIVER=configmap
 # remove it in Go 1.18, which breaks projects using the dep tool.
 # https://blog.golang.org/go116-module-changes
 export GO111MODULE=auto
-export GOPRIVATE=github.com/DataDog
 # Configure Go to pull go.ddbuild.io packages.
-export GOPROXY=binaries.ddbuild.io,https://proxy.golang.org,direct
 export GONOSUMDB=github.com/DataDog,go.ddbuild.io
+export GOPRIVATE=
+export GOPROXY="https://depot-read-api-go.us1.ddbuild.io/magicmirror/magicmirror/@current/|https://depot-read-api-go.us1.ddbuild.io/magicmirror/magicmirror/@current/|https://depot-read-api-go.us1.ddbuild.io/magicmirror/testing/@current/"
 # END ANSIBLE MANAGED BLOCK
-
-if [[ "$(uname)" == "Darwin" ]]; then
-    # export GITLAB_TOKEN=$(security find-generic-password -a ${USER} -s gitlab_token -w)
-    # export OPENAI_API_KEY=$(security find-generic-password -a ${USER} -s openai_api_key -w)
-    # export ATLASSIAN_TOKEN=$(security find-generic-password -a ${USER} -s atlassian_token -w)
-    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(security find-generic-password -a ${USER} -s github_personal_access_token -w)
-elif [[ "$(uname)" == "Linux" ]]; then
-    # export GITLAB_TOKEN=$(pass show gitlab_token)
-    # export OPENAI_API_KEY=$(pass show openai_api_key)
-    # export ATLASSIAN_TOKEN=$(pass show atlassian_token)
-    # export GITHUB_PERSONAL_ACCESS_TOKEN=$(pass show github_personal_access_token)
-fi
-
-if [[ "$(uname)" == "Darwin" ]]; then
-    [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
-    export GPG_TTY=$(tty)
-fi
-
-# Added by Yarn Switch. Guarded: the env file only exists once Yarn Switch is
-# installed (web-ui setup), so a single-repo install like `install.sh all dd-source`
-# won't have it — source it only if present instead of erroring on startup.
-[ -f "$HOME/.yarn/switch/env" ] && source "$HOME/.yarn/switch/env"
-
-# rustup writes ~/.cargo/env (Linux/stow box); nix puts cargo on PATH directly and
-# creates no such file — source it only if present so both setups work without error.
-[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-
-# Volta
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
