@@ -80,6 +80,8 @@
 
     casks = [
       "datadog/tap/ddtool"
+      "datadog/tap/rapid"
+      "datadog/tap/datadog-workspaces"
     ];
 
     onActivation = {

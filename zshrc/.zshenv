@@ -1,5 +1,6 @@
-# Load cargo/rust environment
-. "$HOME/.cargo/env"
+# Load cargo/rust environment (rustup's ~/.cargo/env — only exists on the rustup/stow
+# box; nix installs cargo on PATH directly, so source it only if present).
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"

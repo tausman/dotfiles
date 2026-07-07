@@ -109,11 +109,16 @@ alias py3test='/opt/dogweb/bin/python -m pytest --showlocals'
 # Aliases (sourced from separate file)
 source ~/.aliases.zsh
 
-# SSH agent - ensure it's running and key is loaded
+# SSH agent - load both identities (agent doesn't persist across reboots). tausman is
+# added FIRST so it's the key offered first to github.com (authenticates as tausman);
+# ddog is also loaded for the ddoghq.github.com host alias.
 if ! ssh-add -l &>/dev/null; then
-  eval "$(ssh-agent -s)" &>/dev/null
   if [[ "$(uname)" == "Darwin" ]]; then
-    ssh-add --apple-use-keychain ~/.ssh/id_ed25519 &>/dev/null 2>&1
+    # macOS: use the built-in keychain-backed agent; don't spawn a throwaway one.
+    ssh-add --apple-use-keychain ~/.ssh/id_ed25519_tausman ~/.ssh/id_ed25519_ddog 2>/dev/null
+  else
+    eval "$(ssh-agent -s)" &>/dev/null
+    ssh-add ~/.ssh/id_ed25519_tausman ~/.ssh/id_ed25519_ddog 2>/dev/null
   fi
 fi
 
@@ -230,7 +235,7 @@ elif [[ "$(uname)" == "Linux" ]]; then
 fi
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    . "$HOME/.local/bin/env"
+    [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
     export GPG_TTY=$(tty)
 fi
 
@@ -239,7 +244,9 @@ fi
 # won't have it — source it only if present instead of erroring on startup.
 [ -f "$HOME/.yarn/switch/env" ] && source "$HOME/.yarn/switch/env"
 
-. "$HOME/.cargo/env"
+# rustup writes ~/.cargo/env (Linux/stow box); nix puts cargo on PATH directly and
+# creates no such file — source it only if present so both setups work without error.
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 # Volta
 export VOLTA_HOME="$HOME/.volta"

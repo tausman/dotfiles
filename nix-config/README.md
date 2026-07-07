@@ -77,7 +77,7 @@ Complete the browser SSO authorization for the `tausman` key against the `DataDo
 Biggest gotcha of the setup: **`gh auth switch` does NOT change which account raw
 `git@github.com` SSH uses** — that's decided by which key the agent offers. With both
 keys loaded, SSH may pick `ddog` and authenticate as the wrong account. The DataDog tap
-(step 8) and most DataDog repos need the **`tausman`** identity.
+(step 9) and most DataDog repos need the **`tausman`** identity.
 
 ```sh
 ssh -T git@github.com          # want: "Hi tausman!"  (not tausif-rahman_ddog)
@@ -91,11 +91,26 @@ ssh-add --apple-use-keychain ~/.ssh/id_ed25519_tausman  # add tausman only
 # (or just remove the other: ssh-add -d ~/.ssh/id_ed25519_ddog)
 ```
 
-> **Note:** `zshrc/.zshrc` bootstraps the agent with a generic `~/.ssh/id_ed25519` (no
-> such file — real keys are name-suffixed), so load `tausman` explicitly. **TODO:**
-> reconcile that bootstrap with the real key names.
+> **Note:** `zshrc/.zshrc` re-adds both keys to the (keychain-backed) agent on shell
+> startup (agent doesn't persist across reboots) — **tausman first** so it's offered
+> first to `github.com`. If a fresh shell still can't auth:
+> `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_tausman ~/.ssh/id_ed25519_ddog`.
 
-### 7. Install Homebrew
+### 7. Install `git-config-tool` (Datadog devtools)
+
+Datadog's `git-config-tool` — exports git/SSH config for workspaces, and is required by
+`install.sh init`'s precheck. It's a vendor `curl | sh` installer, so it's **not** managed
+by Nix (self-updating internal binary); run it once here, after GitHub auth:
+
+```sh
+curl -fsSL https://binaries.ddbuild.io/devtools/apps/git-config-tool/install.sh | sh
+git-config-tool setup --no-signing --no-1password
+```
+
+`--no-signing` because commit signing is already handled by the `tausman` key from
+step 5; `--no-1password` skips the 1Password integration. Needs Datadog network/VPN access.
+
+### 8. Install Homebrew
 
 nix-darwin *manages* Homebrew packages/taps but does **not** install Homebrew itself.
 
@@ -103,7 +118,7 @@ nix-darwin *manages* Homebrew packages/taps but does **not** install Homebrew it
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### 8. Pre-tap the DataDog Homebrew tap
+### 9. Pre-tap the DataDog Homebrew tap
 
 The tap is declared in `darwin.nix` (`ddtool` is a **cask**, not a formula). The Part 2
 darwin switch would clone it, but doing that under `sudo` tends to fail with "Permission
@@ -121,7 +136,7 @@ If it still fails, the two root causes (relevant again at Part 2 under `sudo`):
   ssh-keyscan github.com | sudo tee -a /var/root/.ssh/known_hosts >/dev/null
   ```
 
-### 9. Build kmonad from source (with dext)
+### 10. Build kmonad from source (with dext)
 
 The **nixpkgs kmonad is built without macOS DriverKit (`dext`) support and segfaults on
 device access**, so build the binary yourself. It installs to `~/.local/bin/kmonad` —
@@ -141,10 +156,10 @@ stack install --flag kmonad:dext                         # → ~/.local/bin/kmon
   you need full Xcode (`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
   + `sudo xcodebuild -license accept`, then re-run).
 
-### 10. Install + approve the Karabiner-VirtualHIDDevice driver (v5.0.0)
+### 11. Install + approve the Karabiner-VirtualHIDDevice driver (v5.0.0)
 
 kmonad injects keys through this driver. **Use v5.0.0** (matches kmonad's dext) — not
-the latest release. The matching `.pkg` is in the kmonad clone from step 9:
+the latest release. The matching `.pkg` is in the kmonad clone from step 10:
 
 ```sh
 open ~/kmonad/c_src/mac/Karabiner-DriverKit-VirtualHIDDevice/dist/Karabiner-DriverKit-VirtualHIDDevice-5.0.0.pkg
@@ -167,7 +182,7 @@ Activate the driver extension, then approve it:
 > The Karabiner *daemon* is started automatically by `launchd.daemons.karabiner-vhid`
 > (in `darwin.nix`) at Part 2 — you don't start it by hand.
 
-### 11. Grant kmonad Input Monitoring
+### 12. Grant kmonad Input Monitoring
 
 Without this, kmonad connects to the driver but can't read the keyboard
 (`IOHIDDeviceOpen error: (iokit/common) not permitted`). In **System Settings → Privacy
@@ -253,15 +268,15 @@ Then just **test a remapped key**. If it's still not remapping, debug in the for
 sudo ~/.local/bin/kmonad ~/.config/kmonad.kbd
 ```
 
-- `IOHIDDeviceOpen error: (iokit/common) not permitted` → Input Monitoring (step 11).
-- `driver_version_mismatched 1` → wrong Karabiner driver version (step 10, must be 5.0.0).
+- `IOHIDDeviceOpen error: (iokit/common) not permitted` → Input Monitoring (step 12).
+- `driver_version_mismatched 1` → wrong Karabiner driver version (step 11, must be 5.0.0).
 - `driver_connected 0` (never 1) → Karabiner daemon not running (`org.nixos.karabiner-vhid`).
 
 ---
 
 ## How kmonad is wired
 
-- `darwin.nix` → `launchd.daemons.kmonad` runs `~/.local/bin/kmonad` (hand-built, step 9)
+- `darwin.nix` → `launchd.daemons.kmonad` runs `~/.local/bin/kmonad` (hand-built, step 10)
   against `~/.config/kmonad.kbd`, and `launchd.daemons.karabiner-vhid` runs the driver
   daemon. Both `RunAtLoad` + `KeepAlive`.
 - `home.nix` → links `~/.config/kmonad.kbd` → `../kmonad/kmonad.kbd`.
@@ -288,9 +303,9 @@ is on PATH via `home.sessionPath`.
 ## Troubleshooting
 
 - **`brew tap` "could not read Username for https://github.com"** → tap tried HTTPS;
-  `clone_target` SSH URL is set in `darwin.nix` (it is). Pre-tap manually (step 8).
+  `clone_target` SSH URL is set in `darwin.nix` (it is). Pre-tap manually (step 9).
 - **"Permission denied (publickey)" on the tap clone** → wrong SSH account (step 6) or
-  root known_hosts / `sudo` agent (step 8). Fastest: manual `brew tap` as your user.
+  root known_hosts / `sudo` agent (step 9). Fastest: manual `brew tap` as your user.
 - **`ddtool` "No available formula"** → it's a **cask**, keep it under `casks`.
 - **`ssh -T git@github.com` greets the wrong account** → `gh auth switch` doesn't affect
   SSH; fix the key the agent offers (step 6).
