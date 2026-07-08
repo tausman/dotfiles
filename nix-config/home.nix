@@ -29,8 +29,8 @@ in
     ripgrep
     fzf
     neovim
-    alacritty
     tmux
+    nerd-fonts.hack # for Alacritty's "Hack Nerd Font Mono"
     oh-my-zsh
     claude-code
     jujutsu
@@ -82,6 +82,10 @@ in
 
   # Neovim — lazy.nvim writes lazy-lock.json into the config dir.
   home.file.".config/nvim".source = liveLink "config/.config/nvim";
+
+  # Alacritty — installed as a GUI app via darwin.nix's environment.systemPackages;
+  # this links config + themes.
+  home.file.".config/alacritty".source = liveLink "config/.config/alacritty";
 
   # Claude Code — link only the managed files (never all of ~/.claude, which holds
   # runtime state: sessions, projects, history, cache). Claude writes settings.json at

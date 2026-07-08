@@ -9,6 +9,13 @@
 
   users.users."tausif.rahman".home = "/Users/tausif.rahman";
 
+  # GUI apps here (rather than home.nix's home.packages) get symlinked by nix-darwin's
+  # activation script into /Applications/Nix Apps, so they're visible to
+  # Spotlight/Launchpad/Dock — home-manager packages don't get that treatment.
+  environment.systemPackages = [
+    pkgs.alacritty
+  ];
+
   system.keyboard = {
     enableKeyMapping = true;
     remapCapsLockToEscape = true;
@@ -49,11 +56,20 @@
     };
   };
 
+  # Solid desktop wallpaper matching the Alacritty (kanagawa dark theme) background
+  # color #121212. assets/black.png is a 1x1 PNG of that color — regenerate it if the
+  # theme's background changes.
+  system.activationScripts.postActivation.text = ''
+    /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "${./assets/black.png}"'
+  '';
+
   system.defaults = {
     dock = {
       autohide = true;
       orientation = "bottom";
       show-recents = false;
+      # Only show currently-running apps in the Dock, no persistent icons.
+      static-only = true;
     };
 
     finder = {
@@ -65,6 +81,8 @@
       ApplePressAndHoldEnabled = false;
       KeyRepeat = 1;
       InitialKeyRepeat = 10;
+      # Auto-hide the menu bar (reveals on hover to the top edge).
+      _HIHideMenuBar = true;
     };
   };
 

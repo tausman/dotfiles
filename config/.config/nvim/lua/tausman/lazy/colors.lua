@@ -123,8 +123,8 @@ return {
                     italic = false,
                 },
             })
-            -- ColorMyPencils('github_light_high_contrast')
-            ColorMyPencils('github_dark_high_contrast')
+            ColorMyPencils('github_light_high_contrast')
+            -- ColorMyPencils('github_dark_high_contrast')
         end
     },
     {
