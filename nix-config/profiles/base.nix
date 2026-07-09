@@ -10,6 +10,7 @@
     ../modules/jj.nix
     ../modules/claude.nix
     ../modules/dev.nix
+    ../modules/nodejs.nix
   ];
 
   # `liveLink` — an out-of-store symlink to the working copy in ~/dotfiles: the deployed

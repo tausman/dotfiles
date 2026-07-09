@@ -93,9 +93,18 @@ apply_home_manager() {
     # installs itself into the profile). -b backup renames any pre-existing files
     # that would otherwise block the switch (e.g. a stock ~/.zshrc on the VM).
     nix "${NIX_FLAGS[@]}" run home-manager -- switch -b backup --flake "$FLAKE_DIR#$target"
-    # Our shell predates the switch, so pull the freshly-installed profile bins onto
-    # PATH for the rest of this run (git/jj/node/npm/claude now come from nix).
+    # Our shell predates the switch. Put the new profile bins on PATH, then source the
+    # session vars home-manager just generated (NPM_CONFIG_PREFIX, sessionPath, …) so the
+    # rest of this run uses exactly what nix configured — nothing is hardcoded here.
     export PATH="$HOME/.nix-profile/bin:$PATH"
+    local hm_vars="$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+    if [ -e "$hm_vars" ]; then
+        # Clear the guard so the freshly-generated vars load even if a parent shell
+        # already sourced an older generation.
+        unset __HM_SESS_VARS_SOURCED
+        # shellcheck disable=SC1090
+        . "$hm_vars"
+    fi
 }
 
 # DD repos: clone the standalone ones and configure fetch/jj on any monorepos that
@@ -125,7 +134,9 @@ setup_claude() {
     echo "Claude setup complete."
 }
 
-# pi coding agent. node/npm come from nix (home.packages) — no volta needed.
+# pi coding agent. node/npm come from nix; NPM_CONFIG_PREFIX is set by home-manager
+# (modules/zsh.nix) and sourced in apply_home_manager, so `npm install -g` lands in
+# ~/.local/bin instead of failing on the read-only /nix/store.
 setup_pi() {
     echo "Setting up pi..."
     npm install -g --ignore-scripts @earendil-works/pi-coding-agent

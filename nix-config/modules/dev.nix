@@ -11,10 +11,9 @@
     rust-analyzer
     # Build tool for compiling native nvim plugins (e.g. telescope-fzf-native).
     cmake
-    # Toolchains mason.nvim needs to install LSP servers:
-    #   go  → gopls;  nodejs (npm) → pyright, vtsls, yaml/eslint/vim language servers.
+    # go → gopls for mason.nvim. (nodejs — used by the JS/TS-based LSP servers — lives in
+    # modules/nodejs.nix.)
     go
-    nodejs
     # tree-sitter CLI — nvim-treesitter (main branch) uses it to generate/compile parsers.
     tree-sitter
   ];
