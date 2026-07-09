@@ -4,6 +4,10 @@ Nix-based machine setup. On macOS this is driven by [nix-darwin](https://github.
 (system-level: `darwin.nix`) and [home-manager](https://github.com/nix-community/home-manager)
 (user-level: `home.nix`), wired together in `flake.nix`.
 
+On the **headless Ubuntu VM** it's home-manager only (no nix-darwin) and is bootstrapped
+by `../install_nix.sh` — see [Ubuntu / Linux (headless VM)](#ubuntu--linux-headless-vm)
+at the bottom. The rest of this doc (Parts 1–3, kmonad, etc.) is the macOS flow.
+
 - Flake lives in: `/Users/tausif.rahman/dotfiles/nix-config`
 - Both outputs use the `default` target: `darwinConfigurations.default`, `homeConfigurations.default`
 
@@ -321,3 +325,70 @@ is on PATH via `home.sessionPath`.
 - After the first run: open a fresh shell (`exec zsh -l`) so session vars/PATH refresh.
 - The broader dotfiles bootstrap (repos, stow, claude, etc.) is `../install.sh` — run with
   no args for stow, or `./install.sh {all|init|auth|stow|base|repos|...}`.
+
+---
+
+## Ubuntu / Linux (headless VM)
+
+The Linux path is **home-manager only** — no nix-darwin (macOS-only), no kmonad, no
+Homebrew/casks, no GUI apps (Alacritty). The same `home.nix` is shared with the mac; it
+branches on `pkgs.stdenv.isDarwin`. Two arch-specific flake outputs exist, identical
+apart from the `system` string:
+
+- `homeConfigurations."ubuntu-aarch64"` — ARM64
+- `homeConfigurations."ubuntu-x86_64"` — Intel/AMD
+
+User is `bits`, home `/home/bits`.
+
+### Do these by hand first
+
+1. **Clone the dotfiles** (public repo, HTTPS — no auth needed yet):
+   ```sh
+   git clone https://github.com/tausman/dotfiles.git ~/dotfiles
+   ```
+2. **GitHub auth** — the one mandatory prereq. Uses the `gh` already on the box:
+   ```sh
+   cd ~/dotfiles && ./install.sh auth
+   ```
+   Then confirm SSH authenticates as `tausman` (same gotcha as macOS §6):
+   ```sh
+   ssh -T git@github.com          # want: "Hi tausman!"
+   ```
+3. **git-config-tool export** — required for the `ddoghq-sandbox/datadog-pi-packages`
+   clone in the repo step; without it that clone fails with "Repository not found":
+   ```sh
+   curl -fsSL https://binaries.ddbuild.io/devtools/apps/git-config-tool/install.sh | sh
+   git-config-tool setup --no-signing --no-1password
+   ```
+
+### Then run the bootstrap
+
+```sh
+cd ~/dotfiles && ./install_nix.sh
+```
+
+`install_nix.sh` is idempotent and does the rest hands-off:
+
+1. Installs Nix (Determinate installer) **only if it isn't already present**.
+2. `home-manager switch` for this machine's arch (auto-detected from `uname -m`) —
+   installs the tools (git, gh, curl, tmux, nvim, jj, rust, go, node, …) and links the
+   dotfiles. The nix-managed git/gh/curl/tmux shadow any pre-existing system copies on
+   `PATH`, so they become nix-managed with no manual uninstall.
+3. Configures the DD repos (`install.sh repos`), Claude plugins, and pi (node from nix,
+   no volta).
+
+Open a fresh shell (`exec zsh -l`) afterward so PATH/session vars refresh. Subsequent
+config changes: just re-run `./install_nix.sh`, or the switch directly —
+`home-manager switch --flake ~/dotfiles/nix-config#ubuntu-<arch>`.
+
+### Notes / current limitations
+
+- **Big monorepos** (`dd-source`, `dd-go`, `dogweb`, `web-ui`) are *not* cloned here —
+  `install.sh repos` only configures them if they already exist. Clone them yourself if
+  the VM needs them.
+- **`web-ui` / `dogweb` setup** is left manual (`./install.sh web-ui|dogweb`): those flows
+  are workspace-specific (watchman, volta, `dd-compose`, the localhost cert).
+- **Shell-startup noise:** `zshrc/.zshrc` still unconditionally evals `/opt/homebrew`,
+  `pyenv`, `rbenv`, and `direnv`. On the VM those binaries are absent, so each prints a
+  harmless "not found" to stderr on shell start (non-fatal — the command substitution is
+  empty). Deferred as a later dotfiles cleanup.

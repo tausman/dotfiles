@@ -1,5 +1,6 @@
 { pkgs, lib, config, ... }:
 let
+  inherit (pkgs.stdenv) isDarwin;
   # Live out-of-store symlink to the working copy in ~/dotfiles: the system location
   # points at the real repo file, so it's editable in place, tools can write to it, and
   # changes show up directly as git diffs — no `home-manager switch` needed after edits.
@@ -9,8 +10,9 @@ let
   liveLink = path: config.lib.file.mkOutOfStoreSymlink "${dotfiles}/${path}";
 in
 {
-  home.username = "tausif.rahman";
-  home.homeDirectory = "/Users/tausif.rahman"; # change for Ubuntu later
+  # Identity per platform: the mac laptop vs. the headless Ubuntu VM (user: bits).
+  home.username = if isDarwin then "tausif.rahman" else "bits";
+  home.homeDirectory = if isDarwin then "/Users/tausif.rahman" else "/home/bits";
 
   programs.home-manager.enable = true;
 
@@ -30,7 +32,6 @@ in
     fzf
     neovim
     tmux
-    nerd-fonts.hack # for Alacritty's "Hack Nerd Font Mono"
     oh-my-zsh
     claude-code
     jujutsu
@@ -53,7 +54,10 @@ in
     (pkgs.writeScriptBin "tmux-sessionizer" (builtins.readFile ../scripts/.local/bin/tmux-sessionizer))
     (pkgs.writeScriptBin "tmux-bootstrap-session" (builtins.readFile ../scripts/.local/bin/tmux-bootstrap-session))
     (pkgs.writeScriptBin "tmux-toggle-pane" (builtins.readFile ../scripts/.local/bin/tmux-toggle-pane))
-  ];
+  ]
+  # GUI-only extras — skipped on the headless Linux VM.
+  #   nerd-fonts.hack: Alacritty's "Hack Nerd Font Mono".
+  ++ lib.optionals isDarwin [ nerd-fonts.hack ];
 
   # Add ~/.local/bin to PATH declaratively (home-manager writes this into the session
   # vars its generated .zshenv sources). This is where stack installs kmonad and other
@@ -74,18 +78,21 @@ in
   home.file.".config/tmux-sessionizer/tmux-sessionizer.conf".source =
     liveLink "config/.config/tmux-sessionizer/tmux-sessionizer.conf";
 
-  # kmonad keyboard config, read by the launchd daemon defined in darwin.nix.
-  home.file.".config/kmonad.kbd".source = liveLink "kmonad/kmonad.kbd";
+  # macOS-only config links: kmonad (read by darwin.nix's launchd daemon) and the
+  # Alacritty GUI config (installed via darwin.nix). Neither applies on the headless
+  # Linux VM, so mkIf drops them there.
+  home.file.".config/kmonad.kbd" = lib.mkIf isDarwin {
+    source = liveLink "kmonad/kmonad.kbd";
+  };
+  home.file.".config/alacritty" = lib.mkIf isDarwin {
+    source = liveLink "config/.config/alacritty";
+  };
 
   # jj (jujutsu) — `jj config set` writes to this file.
   home.file.".config/jj/config.toml".source = liveLink "jj/.config/jj/config.toml";
 
   # Neovim — lazy.nvim writes lazy-lock.json into the config dir.
   home.file.".config/nvim".source = liveLink "config/.config/nvim";
-
-  # Alacritty — installed as a GUI app via darwin.nix's environment.systemPackages;
-  # this links config + themes.
-  home.file.".config/alacritty".source = liveLink "config/.config/alacritty";
 
   # Claude Code — link only the managed files (never all of ~/.claude, which holds
   # runtime state: sessions, projects, history, cache). Claude writes settings.json at
@@ -115,7 +122,8 @@ in
   programs.zsh = {
     enable = true;
 
-    profileExtra = ''
+    # Homebrew is macOS-only here; the headless Linux VM has no brew to source.
+    profileExtra = lib.optionalString isDarwin ''
       eval "$(/opt/homebrew/bin/brew shellenv zsh)"
     '';
 
