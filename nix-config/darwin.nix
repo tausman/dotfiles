@@ -138,6 +138,7 @@
       "datadog/tap/to-staging"
       "datadog/tap/trigger-ci"
       "datadog/tap/vault"
+      "datadog/tap/orgstore"
     ];
 
     casks = [
