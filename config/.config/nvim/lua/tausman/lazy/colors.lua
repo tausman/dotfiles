@@ -116,6 +116,13 @@ return {
     {
         "projekt0n/github-nvim-theme",
         name = "github-theme",
+        -- This is the ACTIVE colorscheme, so load it eagerly and first: without this a
+        -- fast/fresh nvim (jj/git commit editor, quick file open) can draw before the
+        -- theme applies and show the built-in dark scheme's opaque bg — see the transparent
+        -- Normal in ColorMyPencils. lazy=false + priority=1000 is lazy.nvim's standard
+        -- pattern for the active theme.
+        lazy = false,
+        priority = 1000,
         config = function()
             require('github-theme').setup({
                 disable_background = true,

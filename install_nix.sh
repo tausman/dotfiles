@@ -26,10 +26,13 @@ FLAKE_DIR="$DOTFILES_DIR/nix-config"
 # upstream installer or a locked-down nix.conf.
 NIX_FLAGS=(--extra-experimental-features "nix-command flakes")
 
-# Make `nix` usable in THIS shell. A fresh install doesn't touch our already-running
-# shell's PATH, so source the daemon profile before trying to use nix.
+# Wire `nix` into THIS shell. Source the daemon profile whenever it exists — even if
+# `nix` is already on PATH — because it sets both PATH *and* NIX_REMOTE=daemon. That env
+# var is the critical bit: without it a non-root user bypasses the daemon and tries the
+# root-only local store, failing with `big-lock: Permission denied`. A non-login shell
+# (`bash install_nix.sh`) doesn't source it on its own, hence doing it here. Returns 0 if
+# nix ends up callable.
 load_nix() {
-    command -v nix >/dev/null 2>&1 && return 0
     local p
     for p in \
         /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
@@ -52,6 +55,26 @@ ensure_nix() {
         exit 1
     }
     echo "Nix installed: $(command -v nix)"
+}
+
+# Confirm the Nix daemon is actually reachable before we try to switch. Turns the cryptic
+# "big-lock: Permission denied" / "daemon may have crashed" into an actionable message,
+# covering both "just installed, this shell isn't wired up yet" and "daemon not running".
+require_daemon() {
+    if nix "${NIX_FLAGS[@]}" store ping >/dev/null 2>&1; then
+        return 0
+    fi
+    cat >&2 <<'EOF'
+ERROR: can't reach the Nix daemon (non-root nix needs it).
+Most likely one of:
+  1. Nix was JUST installed and this shell isn't wired to the daemon yet
+     -> open a NEW shell (fresh login) as your normal user, then re-run ./install_nix.sh
+  2. The daemon isn't running
+     -> sudo systemctl enable --now nix-daemon.socket nix-daemon.service
+        (Determinate builds: sudo systemctl enable --now determinate-nixd.socket)
+Verify it's up with:  nix store ping
+EOF
+    exit 1
 }
 
 # Map this machine's arch to the matching flake home configuration.
@@ -110,7 +133,15 @@ setup_pi() {
 }
 
 main() {
+    # home-manager activates as $USER and refuses if it doesn't match home.username
+    # ("bits"). Running under sudo/root is therefore always wrong here.
+    if [ "$(id -u)" -eq 0 ]; then
+        echo "ERROR: run this as your normal user (bits), NOT root/sudo." >&2
+        echo "       home-manager activates as \$USER and errors if USER != bits." >&2
+        exit 1
+    fi
     ensure_nix
+    require_daemon
     apply_home_manager
     setup_repos
     setup_claude
