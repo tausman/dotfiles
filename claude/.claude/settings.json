@@ -98,7 +98,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "auto",
+  "theme": "light",
   "editorMode": "vim",
   "feedbackSurveyState": {
     "lastShownTime": 1754484704865
