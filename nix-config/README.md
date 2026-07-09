@@ -2,7 +2,21 @@
 
 Nix-based machine setup. On macOS this is driven by [nix-darwin](https://github.com/nix-darwin/nix-darwin)
 (system-level: `darwin.nix`) and [home-manager](https://github.com/nix-community/home-manager)
-(user-level: `home.nix`), wired together in `flake.nix`.
+(user-level), wired together in `flake.nix`.
+
+The home-manager config is layered **modules → profiles → hosts**:
+
+- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad, …).
+- `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `gui.nix`
+  (alacritty + kmonad), `desktop.nix` (= base + gui), `headless.nix` (= base).
+- `hosts/` — pure identity (username/home) + one profile import: `mac.nix` → `desktop`,
+  `linux.nix` → `headless`.
+
+The flake maps each target name to a host file: `default` → `hosts/mac.nix`,
+`ubuntu-{aarch64,x86_64}` → `hosts/linux.nix`. Role differences (GUI vs headless) are
+expressed by *which profile a host imports* — no `if` branches. The one genuine platform
+gate is Homebrew's shellenv, guarded on `pkgs.stdenv.isDarwin` inside `modules/zsh.nix`
+(empty on Linux).
 
 On the **headless Ubuntu VM** it's home-manager only (no nix-darwin) and is bootstrapped
 by `../install_nix.sh` — see [Ubuntu / Linux (headless VM)](#ubuntu--linux-headless-vm)
@@ -43,7 +57,7 @@ Open a new shell afterward so `nix` is on `PATH`.
 
 ### 3. Install `gh` (temporary bootstrap)
 
-Via Nix so we don't need Homebrew yet. `home.nix` installs `gh` permanently at Part 2;
+Via Nix so we don't need Homebrew yet. `modules/git.nix` installs `gh` permanently at Part 2;
 we remove this bootstrap copy in Part 3.
 
 ```sh
@@ -283,7 +297,8 @@ sudo ~/.local/bin/kmonad ~/.config/kmonad.kbd
 - `darwin.nix` → `launchd.daemons.kmonad` runs `~/.local/bin/kmonad` (hand-built, step 10)
   against `~/.config/kmonad.kbd`, and `launchd.daemons.karabiner-vhid` runs the driver
   daemon. Both `RunAtLoad` + `KeepAlive`.
-- `home.nix` → links `~/.config/kmonad.kbd` → `../kmonad/kmonad.kbd`.
+- `modules/kmonad.nix` (imported via `profiles/gui.nix`, so only on the mac) → links
+  `~/.config/kmonad.kbd` → `../kmonad/kmonad.kbd`.
 - `../kmonad/com.example.kmonad.plist` is a manual-install reference for **non-nix**
   machines only — do not load it here (nix-darwin already manages the daemon).
 
@@ -292,13 +307,14 @@ sudo ~/.local/bin/kmonad ~/.config/kmonad.kbd
 home-manager **owns** `~/.zshenv`, `~/.zprofile`, `~/.zshrc` — generated symlinks into
 the read-only nix store. Edit the repo files instead:
 
-- `programs.zsh.envExtra`    → sources `~/.config/zsh/dotfiles.zshenv`
-- `programs.zsh.initExtra`   → sources `~/.config/zsh/dotfiles.zshrc`
-- `programs.zsh.profileExtra`→ `eval "$(/opt/homebrew/bin/brew shellenv zsh)"`
+- `modules/zsh.nix` `programs.zsh.envExtra`  → sources `~/.config/zsh/dotfiles.zshenv`
+- `modules/zsh.nix` `programs.zsh.initExtra` → sources `~/.config/zsh/dotfiles.zshrc`
+- `modules/zsh.nix` `programs.zsh.profileExtra` → `eval "$(/opt/homebrew/bin/brew shellenv zsh)"`,
+  guarded on `pkgs.stdenv.isDarwin` (empty on the Linux VM)
 
 Edit `zshrc/.zshrc` / `zshrc/.zshenv`, then `home-manager switch`. Oh My Zsh works because
-`home.packages` installs it and `home.file.".oh-my-zsh"` symlinks it to `$ZSH`. `~/.local/bin`
-is on PATH via `home.sessionPath`.
+`modules/zsh.nix` installs it and links `~/.oh-my-zsh` to `$ZSH`. `~/.local/bin` is on PATH
+via `modules/core.nix`'s `home.sessionPath`.
 
 > home-manager session vars (PATH, etc.) are applied **once per login session** (guarded
 > by `__HM_SESS_VARS_SOURCED`). After a switch that changes them, open a fresh terminal /
@@ -314,7 +330,7 @@ is on PATH via `home.sessionPath`.
 - **`ssh -T git@github.com` greets the wrong account** → `gh auth switch` doesn't affect
   SSH; fix the key the agent offers (step 6).
 - **`git clone`/`git init` "could not lock config file .git/config"** → a read-only
-  symlinked git template. `home.nix` copies `~/.git-template/config` in as a real file
+  symlinked git template. `modules/git.nix` copies `~/.git-template/config` in as a real file
   (activation), so this shouldn't recur; if it does, ensure that path isn't a store symlink.
 - **A renamed `home.file` target leaves a stale symlink** → home-manager only deletes its
   own generation symlinks. Remove the old path manually, then re-switch.
@@ -331,8 +347,10 @@ is on PATH via `home.sessionPath`.
 ## Ubuntu / Linux (headless VM)
 
 The Linux path is **home-manager only** — no nix-darwin (macOS-only), no kmonad, no
-Homebrew/casks, no GUI apps (Alacritty). The same `home.nix` is shared with the mac; it
-branches on `pkgs.stdenv.isDarwin`. Two arch-specific flake outputs exist, identical
+Homebrew/casks, no GUI apps (Alacritty). It shares all the `modules/` tool leaves with the
+mac via `hosts/linux.nix` → `profiles/headless.nix` → `profiles/base.nix`; it just doesn't
+pull in `profiles/gui.nix`, and the brew `profileExtra` in `modules/zsh.nix` is empty off
+Darwin. Two arch-specific flake outputs exist, both mapping to `hosts/linux.nix`, identical
 apart from the `system` string:
 
 - `homeConfigurations."ubuntu-aarch64"` — ARM64

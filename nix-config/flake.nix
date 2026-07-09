@@ -17,21 +17,22 @@
 
   outputs = { nixpkgs, home-manager, nix-darwin, ... }:
   let
-    # Build a home-manager configuration for a given system. home.nix is shared
-    # across every host; it branches on pkgs.stdenv.isDarwin for the mac/linux
-    # differences, so the only per-host input here is the system string.
-    mkHome = system: home-manager.lib.homeManagerConfiguration {
+    # Build a home-manager configuration for a given system + host entry module. Each
+    # host file (./hosts/*.nix) sets its identity and imports the shared modules under
+    # ./home; mac additionally imports the GUI/kmonad modules. The target NAME below is
+    # what selects the host file at switch time (see README).
+    mkHome = system: hostModule: home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.${system};
-      modules = [ ./home.nix ];
+      modules = [ hostModule ];
     };
   in {
     homeConfigurations = {
       # macOS laptop — kept as `default` so the existing flow/README are unchanged.
-      default = mkHome "aarch64-darwin";
-      # Headless Ubuntu VM (user: bits). Both arches use the SAME config; pick the
+      default = mkHome "aarch64-darwin" ./hosts/mac.nix;
+      # Headless Ubuntu VM (user: bits). Both arches share ./hosts/linux.nix; pick the
       # one matching `uname -m`. install_nix.sh selects this automatically.
-      "ubuntu-aarch64" = mkHome "aarch64-linux";
-      "ubuntu-x86_64"  = mkHome "x86_64-linux";
+      "ubuntu-aarch64" = mkHome "aarch64-linux" ./hosts/linux.nix;
+      "ubuntu-x86_64"  = mkHome "x86_64-linux"  ./hosts/linux.nix;
     };
 
     darwinConfigurations.default = nix-darwin.lib.darwinSystem {
