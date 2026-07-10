@@ -11,6 +11,7 @@
     ../modules/claude.nix
     ../modules/dev.nix
     ../modules/nodejs.nix
+    ../modules/ssh.nix
   ];
 
   # `liveLink` — an out-of-store symlink to the working copy in ~/dotfiles: the deployed

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Self-contained setup for the nix-managed machines (the Ubuntu VM `bits`, and the mac).
 # This is the NEW installer and does NOT depend on install.sh: nix/home-manager own the
-# tools and dotfiles; this script does the one-time, non-nix work — repos, Claude plugins,
-# pi, web-ui, and dogweb. It runs fully non-interactively, end to end.
+# tools and dotfiles; this script does the one-time, non-nix work — the ssh Include, repos,
+# Claude plugins, pi, web-ui, and dogweb. It runs fully non-interactively, end to end.
 #
 # Do these BY HAND first:
 #   1. Clone this repo:   git clone https://github.com/tausman/dotfiles.git ~/dotfiles
@@ -166,9 +166,26 @@ setup_repos() {
     echo "Repo setup complete."
 }
 
+# Our custom ssh config (custom/github-keys.config, linked by nix) only loads if
+# ~/.ssh/config Includes it. Add that include once, idempotently, prepended so it sits above
+# any Host block. Any existing ~/.ssh/config is preserved verbatim.
+ensure_ssh_custom_include() {
+    local cfg="$HOME/.ssh/config"
+    mkdir -p "$HOME/.ssh"
+    touch "$cfg"
+    if grep -qF 'Include ~/.ssh/custom/*' "$cfg"; then
+        echo "ssh config already includes ~/.ssh/custom/*"
+        return
+    fi
+    local tmp="$cfg.tmp.$$"
+    { echo 'Include ~/.ssh/custom/*'; echo; cat "$cfg"; } > "$tmp"
+    cat "$tmp" > "$cfg"
+    rm -f "$tmp"
+    echo "Added 'Include ~/.ssh/custom/*' to ~/.ssh/config."
+}
+
 # Claude plugins. claude-code itself is nix-managed (home.packages), so this skips
-# `claude install` and only wires the marketplace + plugin. Mirrors install.sh's
-# setup_claude otherwise.
+# `claude install` and only wires the marketplace + plugin.
 setup_claude() {
     echo "Setting up Claude plugins..."
     local plugins_repo="git@github.com:tausman/claude-plugins.git"
@@ -261,6 +278,8 @@ main() {
     ensure_nix
     require_daemon
     apply_home_manager
+    ensure_ssh_custom_include        # nix links ~/.ssh/custom/*; this makes ssh load it
+    mkdir -p "$HOME/vaults/work"     # obsidian vault dir (was in install.sh setup_base)
     colocate_dotfiles
     setup_repos
     setup_claude
