@@ -58,19 +58,41 @@ ensure_nix() {
 
 # Confirm the Nix daemon is actually reachable before we try to switch. Turns the cryptic
 # "big-lock: Permission denied" / "daemon may have crashed" into an actionable message,
-# covering both "just installed, this shell isn't wired up yet" and "daemon not running".
+# covering both "just installed, this shell isn't wired to the daemon yet" and "daemon not
+# running" — and, on hosts with no systemd (e.g. a Datadog workspace container, where PID 1
+# is a plain keep-alive process and every other daemon — cron, caddy, bees-monitor — is a
+# manually-backgrounded process, not a unit), starts nix-daemon by hand instead of relying on
+# systemctl. The Determinate installer still writes systemd units there (it only checks for
+# the systemctl binary on disk, not whether systemd is actually PID 1), so those units would
+# otherwise sit forever unstarted.
 require_daemon() {
     if nix "${NIX_FLAGS[@]}" store ping >/dev/null 2>&1; then
         return 0
     fi
+
+    echo "Nix daemon not reachable — attempting to start it..."
+    if [ "$(ps -p 1 -o comm= 2>/dev/null)" = "systemd" ]; then
+        sudo systemctl enable --now nix-daemon.socket nix-daemon.service 2>/dev/null || \
+            sudo systemctl enable --now determinate-nixd.socket 2>/dev/null || true
+    else
+        sudo mkdir -p /var/log
+        sudo bash -c "setsid nohup $(command -v nix-daemon) >/var/log/nix-daemon.log 2>&1 </dev/null &"
+        sleep 2
+    fi
+
+    if nix "${NIX_FLAGS[@]}" store ping >/dev/null 2>&1; then
+        echo "Nix daemon is up."
+        return 0
+    fi
+
     cat >&2 <<'EOF'
 ERROR: can't reach the Nix daemon (non-root nix needs it).
 Most likely one of:
   1. Nix was JUST installed and this shell isn't wired to the daemon yet
      -> open a NEW shell (fresh login) as your normal user, then re-run ./install_nix.sh
-  2. The daemon isn't running
-     -> sudo systemctl enable --now nix-daemon.socket nix-daemon.service
-        (Determinate builds: sudo systemctl enable --now determinate-nixd.socket)
+  2. The daemon failed to start
+     -> systemd hosts:    sudo systemctl status nix-daemon.service
+     -> non-systemd hosts: check /var/log/nix-daemon.log
 Verify it's up with:  nix store ping
 EOF
     exit 1
