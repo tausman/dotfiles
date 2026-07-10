@@ -121,8 +121,8 @@ return {
         -- theme applies and show the built-in dark scheme's opaque bg — see the transparent
         -- Normal in ColorMyPencils. lazy=false + priority=1000 is lazy.nvim's standard
         -- pattern for the active theme.
-        lazy = false,
-        priority = 1000,
+        -- lazy = false,
+        -- priority = 1000,
         config = function()
             require('github-theme').setup({
                 disable_background = true,

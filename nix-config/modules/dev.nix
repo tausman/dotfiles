@@ -14,6 +14,8 @@
     # go → gopls for mason.nvim. (nodejs — used by the JS/TS-based LSP servers — lives in
     # modules/nodejs.nix.)
     go
+    # mockgen — Go mock generator (install.sh got this via `go install .../mockgen`).
+    mockgen
     # tree-sitter CLI — nvim-treesitter (main branch) uses it to generate/compile parsers.
     tree-sitter
   ];

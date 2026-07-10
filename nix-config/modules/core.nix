@@ -16,5 +16,6 @@
     jq
     ripgrep
     fzf
+    nnn    # terminal file manager (the `n` shell function + NNN_PLUG in the dotfiles use it)
   ];
 }
