@@ -259,7 +259,10 @@ setup_dogweb() {
 
     # update_deps is provided by dogweb's direnv env, not the base PATH — run it through
     # `direnv exec` so it resolves non-interactively (falls back to a bare call otherwise).
+    # direnv refuses a `.envrc` that hasn't been approved, so allow it first (it's your own
+    # dogweb clone, and you're explicitly setting it up here).
     if command -v direnv >/dev/null 2>&1; then
+        ( cd "$HOME/dd/dogweb" && direnv allow )
         direnv exec "$HOME/dd/dogweb" update_deps
     else
         update_deps
