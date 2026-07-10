@@ -18,5 +18,9 @@
     mockgen
     # tree-sitter CLI — nvim-treesitter (main branch) uses it to generate/compile parsers.
     tree-sitter
+    # python/ruby version managers. The dotfiles zshrc runs `pyenv init`/`rbenv init` when
+    # present. On the mac the brew copies (darwin.nix) take PATH precedence and shadow these.
+    pyenv
+    rbenv
   ];
 }

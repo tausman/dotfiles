@@ -17,12 +17,6 @@ if [[ "$(uname)" == "Darwin" ]]; then
     export HOMEBREW_DIR=/opt/homebrew
     export HOMEBREW_BIN=/opt/homebrew/bin
     export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
-elif [[ "$(uname)" == "Linux" ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
-    export HOMEBREW_DIR=/home/linuxbrew/.linuxbrew
-    export HOMEBREW_BIN=/home/linuxbrew/.linuxbrew/bin
-    export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH"
-    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 

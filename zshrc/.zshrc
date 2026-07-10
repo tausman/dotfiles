@@ -213,8 +213,8 @@ fi
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
 # BEGIN ANSIBLE MANAGED BLOCK
-# Load homebrew shell variables
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# Load homebrew shell variables (Darwin only — nix Linux boxes have no brew)
+[[ "$(uname)" == "Darwin" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Force certain more-secure behaviours from homebrew
 export HOMEBREW_NO_INSECURE_REDIRECT=1
