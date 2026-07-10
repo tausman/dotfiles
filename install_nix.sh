@@ -4,9 +4,9 @@
 # tools and dotfiles; this script does the one-time, non-nix work — the ssh Include, repos,
 # Claude plugins, pi, web-ui, and dogweb. It runs fully non-interactively, end to end.
 #
-# Do these BY HAND first:
+# Do these first:
 #   1. Clone this repo:   git clone https://github.com/tausman/dotfiles.git ~/dotfiles
-#   2. GitHub auth:       ./install.sh auth      (both accounts, keys, signing, SSO)
+#   2. GitHub auth:       ./install_nix.sh auth   (both accounts, keys, signing, SSO)
 #   3. git-config-tool:   curl -fsSL https://binaries.ddbuild.io/devtools/apps/git-config-tool/install.sh | sh
 #                         git-config-tool setup --no-signing --no-1password
 #      (wires the ddoghq.github.com ssh alias — the datadog-pi-packages clone needs it.)
@@ -17,9 +17,10 @@
 # Idempotent — safe to re-run.
 #
 # Usage:
-#   ./install_nix.sh          full setup
-#   ./install_nix.sh fast     skip the heavy web-ui + dogweb steps (still does nix, ssh,
-#                             repos, claude, pi)
+#   ./install_nix.sh          full setup (everything except auth)
+#   ./install_nix.sh fast     full setup minus the heavy web-ui + dogweb steps
+#   ./install_nix.sh nix      just install Nix + verify the daemon, then stop
+#   ./install_nix.sh auth     GitHub auth only (both accounts, keys, signing, SSO)
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -101,6 +102,117 @@ Most likely one of:
 Verify it's up with:  nix store ping
 EOF
     exit 1
+}
+
+# GitHub auth + keys for both accounts (tausman and the tausif-rahman_ddog managed
+# identity). Generates a per-machine keypair for each account, uploads the public halves
+# (auth for both, signing for tausman), records signing trust, and walks through SSO. Ported
+# from install.sh; OS-agnostic (gh + ssh-keygen). Idempotent — existing keys/uploads/scopes
+# are detected and skipped. Private keys never leave the machine.
+setup_auth() {
+    echo "Setting up GitHub auth + signing keys..."
+    command -v gh >/dev/null 2>&1 || {
+        echo "ERROR: gh (GitHub CLI) not found — install it first." >&2
+        exit 1
+    }
+
+    # `timeout` guards the SSO probe from hanging. macOS lacks it, so fall back to
+    # coreutils' gtimeout, or run without a limit.
+    run_timeout() {  # run_timeout <secs> <cmd...>
+        if command -v timeout >/dev/null 2>&1; then timeout "$@"
+        elif command -v gtimeout >/dev/null 2>&1; then gtimeout "$@"
+        else shift; "$@"; fi
+    }
+
+    # Both accounts must be logged in: the primary (tausman) and the Datadog managed
+    # identity (tausif-rahman_ddog). Verify each by name and only run the flow for a missing
+    # one. -w opens a browser, -c copies the code.
+    for acct in tausman tausif-rahman_ddog; do
+        if gh auth status 2>/dev/null | grep -q "account $acct"; then
+            echo "gh: $acct already logged in."
+        else
+            echo "gh: $acct not logged in — starting login flow."
+            echo "  >>> Authenticate as $acct in the browser <<<"
+            gh auth login -h github.com -p ssh --skip-ssh-key -w -c
+            gh auth status 2>/dev/null | grep -q "account $acct" || {
+                echo "ERROR: still not logged in as $acct (did you pick the right account?)." >&2
+                exit 1
+            }
+        fi
+    done
+
+    ensure_scope() {  # ensure_scope <scope>
+        gh auth status --active 2>&1 | grep -q "'$1'" || {
+            echo "  Adding token scope '$1' (opens browser)..."
+            gh auth refresh -h github.com -s "$1"
+        }
+    }
+    key_on_account() {  # key_on_account <pubfile> <api-path> — already uploaded?
+        gh api "$2" --jq '.[].key' 2>/dev/null | grep -qF "$(awk '{print $1, $2}' "$1")"
+    }
+    upload_key() {  # upload_key <pubfile> <authentication|signing>
+        local api=/user/keys; [ "$2" = signing ] && api=/user/ssh_signing_keys
+        if key_on_account "$1" "$api"; then
+            echo "  $2 key already uploaded — skipping."
+        else
+            gh ssh-key add "$1" --type "$2" --title "$(hostname -s) $(basename "$1") ($2)"
+            echo "  Uploaded $2 key ($(basename "$1"))."
+        fi
+    }
+    key_can_access() {  # key_can_access <keyfile> <owner/repo> — SSO-authorized + access?
+        run_timeout 20 ssh -F /dev/null -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            -i "$1" git@github.com "git-upload-pack '$2.git'" </dev/null >/dev/null 2>&1
+    }
+    ensure_sso() {  # ensure_sso <account> <keyfile> <org> <owner/repo>
+        if key_can_access "$2" "$4"; then
+            echo "  SSO OK: $(basename "$2") can reach $4."
+            return 0
+        fi
+        if [ ! -t 0 ]; then
+            echo "  WARNING: $(basename "$2") can't reach $4 — authorize '$3' at" >&2
+            echo "           https://github.com/settings/keys (non-interactive; skipping)." >&2
+            return 0
+        fi
+        echo
+        echo "  >>> SSO NEEDED for $1 <<<"
+        echo "  Key '$(basename "$2")' isn't authorized for the '$3' org yet."
+        echo "    1. Open   https://github.com/settings/keys"
+        echo "    2. Find   '$(hostname -s) $(basename "$2") (authentication)'"
+        echo "    3. Click  'Configure SSO' and authorize '$3'."
+        while true; do
+            read -r -p "  Press Enter to re-check (or 's' to skip): " ans || ans=s
+            [ "$ans" = s ] && { echo "  Skipped SSO for $1 — git over this key may fail while the lid is closed."; return 0; }
+            if key_can_access "$2" "$4"; then
+                echo "  Verified: $(basename "$2") can now reach $4."
+                return 0
+            fi
+            echo "  Still no access — confirm you authorized '$3' for this exact key."
+        done
+    }
+    setup_account_key() {  # setup_account_key <account> <keyfile> <sign|nosign> <org> <owner/repo>
+        echo "Setting up SSH key for $1..."
+        gh auth switch -h github.com -u "$1"
+        ensure_scope admin:public_key
+        [ -f "$2" ] || ssh-keygen -t ed25519 -C "tausif.rahman@datadoghq.com" -f "$2" -N ""
+        upload_key "$2.pub" authentication
+        if [ "$3" = sign ]; then
+            ensure_scope admin:ssh_signing_key
+            upload_key "$2.pub" signing
+        fi
+        ensure_sso "$1" "$2" "$4" "$5"
+    }
+
+    setup_account_key tausman            ~/.ssh/id_ed25519_tausman sign   DataDog        DataDog/team-aaa-internal-tools
+    setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    nosign ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
+
+    # Trust the signing key locally so jj/git can verify our own commits.
+    mkdir -p ~/.ssh
+    grep -qF "$(cat ~/.ssh/id_ed25519_tausman.pub)" ~/.ssh/allowed_signers 2>/dev/null || \
+        echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519_tausman.pub)" >> ~/.ssh/allowed_signers
+
+    # Leave the Datadog managed identity active.
+    gh auth switch -h github.com -u tausif-rahman_ddog
+    echo "gh accounts + keys OK."
 }
 
 # Map this machine's arch to the matching flake home configuration.
@@ -300,22 +412,44 @@ setup_dogweb() {
     echo "dogweb setup complete."
 }
 
-main() {
-    # Modes: (none) = full setup; `fast` = everything except the heavy web-ui + dogweb steps
-    # (still does nix, ssh, repos, claude, pi).
-    local mode="${1:-full}"
-    case "$mode" in
-        full|fast) ;;
-        *) echo "Usage: $0 [fast]   (fast skips the web-ui + dogweb setup)" >&2; exit 1 ;;
-    esac
+usage() {
+    cat >&2 <<EOF
+Usage: $0 [command]
+  (none)   full setup: nix + home-manager + ssh + repos + claude + pi + web-ui + dogweb
+  fast     full setup minus the heavy web-ui + dogweb steps
+  nix      install Nix + verify the daemon, then stop
+  auth     GitHub auth only (both accounts, per-account SSH keys, signing, SSO)
+EOF
+    exit 1
+}
 
-    # home-manager activates as $USER and refuses if it doesn't match home.username
-    # ("bits"). Running under sudo/root is therefore always wrong here.
+main() {
+    local cmd="${1:-full}"
+    case "$cmd" in full|fast|nix|auth) ;; *) usage ;; esac
+
+    # Everything here runs as the normal user, never sudo/root: `auth` writes YOUR ssh keys,
+    # the Determinate installer escalates on its own, and home-manager activates as $USER
+    # (and refuses if it doesn't match home.username).
     if [ "$(id -u)" -eq 0 ]; then
-        echo "ERROR: run this as your normal user (bits), NOT root/sudo." >&2
-        echo "       home-manager activates as \$USER and errors if USER != bits." >&2
+        echo "ERROR: run this as your normal user, NOT root/sudo." >&2
         exit 1
     fi
+
+    # Standalone commands.
+    case "$cmd" in
+        auth)
+            setup_auth
+            return 0
+            ;;
+        nix)
+            ensure_nix
+            require_daemon
+            echo "Nix installed and daemon reachable."
+            return 0
+            ;;
+    esac
+
+    # full / fast
     ensure_nix
     require_daemon
     apply_home_manager
@@ -326,7 +460,7 @@ main() {
     setup_claude
     setup_pi
 
-    if [ "$mode" = fast ]; then
+    if [ "$cmd" = fast ]; then
         echo
         echo "Fast mode: skipped web-ui and dogweb setup."
         echo "Done. Open a fresh shell ('exec zsh -l') so PATH/session vars refresh."
