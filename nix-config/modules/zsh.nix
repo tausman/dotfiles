@@ -26,8 +26,19 @@
       source ~/.config/zsh/dotfiles.zshenv
     '';
 
-    initExtra = ''
+    # initContent replaces the deprecated initExtra (default order matches the old
+    # after-compinit placement, so behavior is unchanged).
+    initContent = ''
       source ~/.config/zsh/dotfiles.zshrc
+
+      # tmux stores its socket under $TMUX_TMPDIR. Some hosts (workspace containers with no
+      # logind-managed /run/user/$UID) point it at a dir we don't own, so tmux can't create
+      # its socket. Fall back to /tmp when the target isn't writable. Runs here (late, in the
+      # generated ~/.zshrc, after the host's login files set TMUX_TMPDIR) — .zshenv /
+      # sessionVariables run too early to win. No-op on macOS / where TMUX_TMPDIR is unset.
+      if [ -n "''${TMUX_TMPDIR:-}" ] && [ ! -w "$TMUX_TMPDIR" ]; then
+        export TMUX_TMPDIR=/tmp
+      fi
     '';
   };
 }

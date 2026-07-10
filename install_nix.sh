@@ -15,6 +15,11 @@
 # dogweb steps assume, like the workspace, that a Docker daemon and direnv are available and
 # that the dd-source/dd-go/dogweb/web-ui monorepos already exist under ~/dd.
 # Idempotent — safe to re-run.
+#
+# Usage:
+#   ./install_nix.sh          full setup
+#   ./install_nix.sh fast     skip the heavy web-ui + dogweb steps (still does nix, ssh,
+#                             repos, claude, pi)
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -296,6 +301,14 @@ setup_dogweb() {
 }
 
 main() {
+    # Modes: (none) = full setup; `fast` = everything except the heavy web-ui + dogweb steps
+    # (still does nix, ssh, repos, claude, pi).
+    local mode="${1:-full}"
+    case "$mode" in
+        full|fast) ;;
+        *) echo "Usage: $0 [fast]   (fast skips the web-ui + dogweb setup)" >&2; exit 1 ;;
+    esac
+
     # home-manager activates as $USER and refuses if it doesn't match home.username
     # ("bits"). Running under sudo/root is therefore always wrong here.
     if [ "$(id -u)" -eq 0 ]; then
@@ -312,6 +325,14 @@ main() {
     setup_repos
     setup_claude
     setup_pi
+
+    if [ "$mode" = fast ]; then
+        echo
+        echo "Fast mode: skipped web-ui and dogweb setup."
+        echo "Done. Open a fresh shell ('exec zsh -l') so PATH/session vars refresh."
+        return 0
+    fi
+
     setup_web_ui
     setup_dogweb
     echo
