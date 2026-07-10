@@ -14,6 +14,7 @@
   # Spotlight/Launchpad/Dock — home-manager packages don't get that treatment.
   environment.systemPackages = [
     pkgs.alacritty
+    pkgs.rectangle
   ];
 
   system.keyboard = {
@@ -84,6 +85,11 @@
       # Auto-hide the menu bar (reveals on hover to the top edge).
       _HIHideMenuBar = true;
     };
+
+    # Mouse tracking speed (pointer acceleration). Not a typed nix-darwin option, so
+    # it's set as a raw default. Default is ~0.6875; higher is faster. macOS caps the
+    # System Settings slider around 3.0.
+    CustomUserPreferences.NSGlobalDomain."com.apple.mouse.scaling" = 3.0;
   };
 
   homebrew = {
