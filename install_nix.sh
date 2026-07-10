@@ -19,7 +19,7 @@
 # Usage:
 #   ./install_nix.sh          full setup (everything except auth)
 #   ./install_nix.sh fast     full setup minus the heavy web-ui + dogweb steps
-#   ./install_nix.sh nix      just install Nix + verify the daemon, then stop
+#   ./install_nix.sh nix      install Nix + apply home-manager (all packages + dotfiles)
 #   ./install_nix.sh auth     GitHub auth only (both accounts, keys, signing, SSO)
 set -euo pipefail
 
@@ -417,7 +417,7 @@ usage() {
 Usage: $0 [command]
   (none)   full setup: nix + home-manager + ssh + repos + claude + pi + web-ui + dogweb
   fast     full setup minus the heavy web-ui + dogweb steps
-  nix      install Nix + verify the daemon, then stop
+  nix      install Nix + apply home-manager (all packages + dotfiles), then stop
   auth     GitHub auth only (both accounts, per-account SSH keys, signing, SSO)
 EOF
     exit 1
@@ -444,7 +444,8 @@ main() {
         nix)
             ensure_nix
             require_daemon
-            echo "Nix installed and daemon reachable."
+            apply_home_manager
+            echo "Nix installed and home-manager applied (all packages + dotfiles)."
             return 0
             ;;
     esac
