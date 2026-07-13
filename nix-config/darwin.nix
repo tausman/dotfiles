@@ -62,6 +62,11 @@
   # theme's background changes.
   system.activationScripts.postActivation.text = ''
     /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "${./assets/black.png}"'
+
+    # Login screen / account avatar: same solid-black asset as the wallpaper above.
+    # No typed nix-darwin option for this, so it's set directly via dscl (activation
+    # scripts already run as root).
+    /usr/bin/dscl . create /Users/tausif.rahman Picture "${./assets/black.png}"
   '';
 
   system.defaults = {
@@ -86,10 +91,9 @@
       _HIHideMenuBar = true;
     };
 
-    # Mouse tracking speed (pointer acceleration). Not a typed nix-darwin option, so
-    # it's set as a raw default. Default is ~0.6875; higher is faster. macOS caps the
-    # System Settings slider around 3.0.
-    CustomUserPreferences.NSGlobalDomain."com.apple.mouse.scaling" = 3.0;
+    # Trackpad tracking speed. Not a typed nix-darwin option, so it's set as a raw
+    # default. Default is ~0.6875, macOS caps the System Settings slider around 3.0.
+    CustomUserPreferences.NSGlobalDomain."com.apple.trackpad.scaling" = 1.625;
   };
 
   homebrew = {
@@ -149,6 +153,7 @@
 
     casks = [
       "1password-cli"
+      "claude"
       "gcloud-cli"
       # Datadog tap casks
       "datadog/tap/atlas"
