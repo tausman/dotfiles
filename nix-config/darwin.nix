@@ -64,9 +64,18 @@
     /usr/bin/osascript -e 'tell application "System Events" to tell every desktop to set picture to "${./assets/black.png}"'
 
     # Login screen / account avatar: same solid-black asset as the wallpaper above.
-    # No typed nix-darwin option for this, so it's set directly via dscl (activation
-    # scripts already run as root).
-    /usr/bin/dscl . create /Users/tausif.rahman Picture "${./assets/black.png}"
+    # The login window renders the account's JPEGPhoto attribute (raw image bytes in
+    # the directory record), NOT the Picture attribute (just a file path) — so setting
+    # Picture alone leaves the old avatar. dscl can't write binary attributes, so the
+    # image bytes are loaded via dsimport with an externalbinary mapping. This runs as
+    # root during activation, so no sudo needed.
+    tmp=$(/usr/bin/mktemp)
+    /usr/bin/printf '0x0A 0x5C 0x3A 0x2C dsRecTypeStandard:Users 2 dsAttrTypeStandard:RecordName externalbinary:dsAttrTypeStandard:JPEGPhoto\ntausif.rahman:%s\n' "${./assets/black.png}" > "$tmp"
+    /usr/bin/dscl . -delete /Users/tausif.rahman JPEGPhoto || true
+    /usr/bin/dscl . -delete /Users/tausif.rahman Picture || true
+    /usr/bin/dsimport "$tmp" /Local/Default M
+    /usr/bin/dscl . -create /Users/tausif.rahman Picture "${./assets/black.png}"
+    /bin/rm -f "$tmp"
   '';
 
   system.defaults = {
