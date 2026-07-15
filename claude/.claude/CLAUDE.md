@@ -28,6 +28,15 @@
 - Use `jj bookmark` for branch management, `jj git push` to push.
 - Branch/bookmark naming: `tausman/<ticket-short-description>` (e.g., `tausman/cred-2174-pat-support`)
 
+## GitHub CLI (gh)
+- Two authenticated accounts exist for github.com; pick the one matching the repo's org:
+  - `DataDog` org → use the `tausman` account.
+  - `ddoghq` org → use the `tausif-rahman_ddog` account.
+- If a `gh` command fails to authenticate / returns a 403/404 for a repo you should have access to,
+  the active account is likely wrong for that org. Switch with `gh auth switch --user <account>`
+  (e.g. `gh auth switch --user tausman` for a DataDog-org repo) and retry.
+- Check current state with `gh auth status`.
+
 ## Debugging Approach
 
 When debugging issues, follow this iterative methodology:
