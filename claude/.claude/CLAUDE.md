@@ -29,6 +29,11 @@
 - Branch/bookmark naming: `tausman/<ticket-short-description>` (e.g., `tausman/cred-2174-pat-support`)
 
 ## GitHub CLI (gh)
+- `ddoghq` is where private Datadog repos are moving to. If a `ddoghq` org is present, prefer it over
+  `DataDog` — that is most likely where PRs should be opened. Only fall back to `DataDog` when there is
+  no `ddoghq` equivalent.
+- The repo's git `origin` remote should already be set up correctly, so you shouldn't have to worry
+  about configuring or changing it — just use it as-is.
 - Two authenticated accounts exist for github.com; pick the one matching the repo's org:
   - `DataDog` org → use the `tausman` account.
   - `ddoghq` org → use the `tausif-rahman_ddog` account.
