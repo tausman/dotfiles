@@ -12,6 +12,10 @@ key = "~/.ssh/id_ed25519_tausman.pub"
 [git]
 push-new-bookmark = true
 
+[core]
+fsmonitor = "watchman"
+watchman.register-snapshot-trigger = true
+
 [remotes.origin]
 auto-track-bookmarks = '''
 "prod" |
