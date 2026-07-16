@@ -6,8 +6,11 @@
   #   custom/github-keys.config — fallback per-account identities for github.com and
   #     ddoghq.github.com when the forwarded agent isn't available.
   #   workspaces/01-auth.config — tmux auth bootstrap for `wssh`.
+  #   workspaces/02-broker.config — reverse-forward the autoworker Slack broker.
   home.file.".ssh/custom/github-keys.config".source =
     liveLink "ssh/.ssh/custom/github-keys.config";
   home.file.".ssh/workspaces/01-auth.config".source =
     liveLink "ssh/.ssh/workspaces/01-auth.config";
+  home.file.".ssh/workspaces/02-broker.config".source =
+    liveLink "ssh/.ssh/workspaces/02-broker.config";
 }
