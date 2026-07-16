@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 {
   # Extras for a machine with a display (currently just the mac).
   #   alacritty — GUI terminal (role/GUI-axis).
@@ -9,5 +9,11 @@
   imports = [
     ../modules/alacritty.nix
     ../modules/kmonad.nix
+  ];
+
+  # GUI-only tools (not wanted on the headless workstation).
+  #   ffmpeg — media transcoding; only useful in a non-headless context.
+  home.packages = with pkgs; [
+    ffmpeg
   ];
 }
