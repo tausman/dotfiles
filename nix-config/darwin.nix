@@ -165,6 +165,7 @@
       "claude"
       "gcloud-cli"
       # Datadog tap casks
+      "datadog/tap/dd-auth"
       "datadog/tap/atlas"
       "datadog/tap/bzl"
       "datadog/tap/datadog-workspaces"
