@@ -14,6 +14,7 @@
   # Spotlight/Launchpad/Dock — home-manager packages don't get that treatment.
   environment.systemPackages = [
     pkgs.alacritty
+    pkgs.drawio
     pkgs.rectangle
   ];
 

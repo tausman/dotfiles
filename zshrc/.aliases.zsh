@@ -6,6 +6,29 @@ alias gfo='git fetch origin'
 alias gpo='git pull origin'
 alias gr='git rebase -i --update-refs'
 
+# Slim down the current repo's remote-tracking refs to just the default
+# branch + tausman/*.
+gslim() {
+    local default_branch
+    default_branch=$(git ls-remote --symref origin HEAD | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2}')
+    if [[ -z "$default_branch" ]]; then
+        echo "Could not determine default branch"
+        return 1
+    fi
+    echo "Default branch: $default_branch"
+
+    git symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true
+    git for-each-ref --format='delete %(refname)' refs/remotes/origin/ | git update-ref --stdin 2>/dev/null || true
+    git config --unset-all remote.origin.fetch 2>/dev/null || true
+    git config --add remote.origin.fetch "+refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
+    git config --add remote.origin.fetch '+refs/heads/tausman*:refs/remotes/origin/tausman*'
+    git fetch origin
+    git remote set-head origin "$default_branch"
+
+    [ -d .jj ] || jj git init --colocate
+    echo "Done."
+}
+
 # Git worktree add with tausman/ prefix
 unalias gwa 2>/dev/null
 gwa() {
