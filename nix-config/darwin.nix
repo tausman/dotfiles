@@ -101,9 +101,16 @@
       _HIHideMenuBar = true;
     };
 
-    # Trackpad tracking speed. Not a typed nix-darwin option, so it's set as a raw
-    # default. Default is ~0.6875, macOS caps the System Settings slider around 3.0.
-    CustomUserPreferences.NSGlobalDomain."com.apple.trackpad.scaling" = 1.625;
+    # Trackpad / mouse tracking + scroll speed. Not typed nix-darwin options, so they're
+    # set as raw defaults.
+    #   trackpad.scaling  — trackpad tracking speed (slider caps ~3.0; here maxed).
+    #   mouse.scaling     — mouse pointer speed (caps ~3.0; here maxed).
+    #   trackpad.scrolling — trackpad scroll speed (Accessibility > Pointer Control).
+    #   scrollwheel.scaling — mouse scroll speed (slider 0..3).
+    CustomUserPreferences.NSGlobalDomain."com.apple.trackpad.scaling" = 3.0;
+    CustomUserPreferences.NSGlobalDomain."com.apple.mouse.scaling" = 3.0;
+    CustomUserPreferences.NSGlobalDomain."com.apple.trackpad.scrolling" = 1.0;
+    CustomUserPreferences.NSGlobalDomain."com.apple.scrollwheel.scaling" = 1.0;
   };
 
   homebrew = {
