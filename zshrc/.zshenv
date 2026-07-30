@@ -5,7 +5,10 @@
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
 
-export NNN_PLUG='z:fzcd;o:fzopen;f:fzfopen'
+# On nix-managed machines, programs.nnn (nix-config/modules/core.nix) bakes NNN_PLUG into
+# the wrapped nnn binary itself, with plugins fetched declaratively — no export needed here.
+# Non-nix machines (install.sh + brew) still rely on `getplugs` + this export.
+[ -e "$HOME/.nix-profile/bin/nnn" ] || export NNN_PLUG='z:fzcd;o:fzopen'
 
 # Load homebrew shell variables
 # Force certain more-secure behaviours from homebrew
