@@ -1,0 +1,33 @@
+# Tausif Ghostty config — mirrors ~/.config/alacritty/alacritty.toml
+
+# Report as xterm-256color for remote compatibility (matches Alacritty's [env] TERM).
+# Without this Ghostty advertises xterm-ghostty, whose terminfo is often absent on
+# remote hosts.
+term = xterm-256color
+
+# --- Window ---
+# Borderless / no title bar, matching Alacritty's decorations = "None".
+window-decoration = false
+# Start full screen. non-native keeps it in the current Space (no separate macOS
+# fullscreen Space) and plays nicely with the hidden titlebar — closest match to
+# Alacritty's Maximized / SimpleFullscreen behaviour.
+fullscreen = true
+macos-non-native-fullscreen = true
+# Don't let macOS window-state restoration reopen the previous (non-fullscreen)
+# window geometry on top of `fullscreen` — start fresh every launch.
+window-save-state = never
+# Treat both Option keys as Alt (matches Alacritty's option_as_alt = "Both").
+macos-option-as-alt = true
+
+# --- Font ---  (Hack Nerd Font Mono is supplied by modules/alacritty.nix)
+font-family = Hack Nerd Font Mono
+font-size = 11.75
+
+# --- Cursor ---
+# Blinking block (Alacritty: cursor.style.blinking = "Always").
+cursor-style = block
+cursor-style-blink = true
+
+# --- Theme ---
+# Swap the include below to change themes (mirrors Alacritty's [general].import list).
+config-file = themes/tausif_light_theme_soft

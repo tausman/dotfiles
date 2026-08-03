@@ -1,0 +1,30 @@
+# Tausif Personal Light theme
+# Ported from Alacritty themes/tausif_light_theme_soft.toml
+
+# Primary
+background = #fdf6e3
+foreground = #000000
+
+# Cursor
+cursor-color = #000000
+cursor-text = #fdf6e3
+
+# Normal colors (ANSI 0–7)
+palette = 0=#000000
+palette = 1=#b83019
+palette = 2=#51bf37
+palette = 3=#c6c43d
+palette = 4=#0c24bf
+palette = 5=#b93ec1
+palette = 6=#53c2c5
+palette = 7=#c7c7c7
+
+# Bright colors (ANSI 8–15)
+palette = 8=#676767
+palette = 9=#ef766d
+palette = 10=#8cf67a
+palette = 11=#fefb7e
+palette = 12=#6a71f6
+palette = 13=#f07ef8
+palette = 14=#8ef9fd
+palette = 15=#feffff

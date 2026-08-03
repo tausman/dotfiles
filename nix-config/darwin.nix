@@ -172,6 +172,7 @@
       "1password-cli"
       "claude"
       "gcloud-cli"
+      "ghostty"
       # Datadog tap casks
       "datadog/tap/dd-auth"
       "datadog/tap/atlas"
