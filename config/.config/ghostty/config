@@ -34,7 +34,13 @@ font-size = 11.75
 # their side too: see VI_MODE_CURSOR_* in zshrc/.zshrc and guicursor in nvim's set.lua.
 cursor-style = block
 cursor-style-blink = true
+# NOTE: these only apply OUTSIDE tmux. Inside a tmux pane, tmux owns the cursor colour and
+# style, so those are set in tmux/.tmux.conf instead. Per-theme cursor colours live in the
+# theme files below.
 
 # --- Theme ---
-# Swap the include below to change themes (mirrors Alacritty's [general].import list).
-config-file = themes/tausif_light_theme_soft
+# Follows the macOS appearance: light mode uses the soft light theme, dark mode uses the
+# GitHub-dark-high-contrast-on-#121212 theme. Both live in ./themes/ and are picked up by
+# name. Toggle from nvim with <leader>bg (see lua/tausman/lazy/colors.lua), which flips the
+# system appearance -- Ghostty repaints instantly, no reload needed.
+theme = light:tausif_light_theme_soft,dark:tausif_dark_high_contrast

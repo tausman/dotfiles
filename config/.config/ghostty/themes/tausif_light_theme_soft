@@ -5,7 +5,7 @@
 background = #fdf6e3
 foreground = #000000
 
-# Cursor
+# Cursor (only used outside tmux -- inside a pane tmux owns the cursor colour)
 cursor-color = #000000
 cursor-text = #fdf6e3
 
