@@ -4,7 +4,7 @@
     tmux
     (writeScriptBin "tmux-sessionizer" (builtins.readFile ../../scripts/.local/bin/tmux-sessionizer))
     (writeScriptBin "tmux-bootstrap-session" (builtins.readFile ../../scripts/.local/bin/tmux-bootstrap-session))
-    (writeScriptBin "tmux-toggle-pane" (builtins.readFile ../../scripts/.local/bin/tmux-toggle-pane))
+    (writeScriptBin "tmux-place-pane" (builtins.readFile ../../scripts/.local/bin/tmux-place-pane))
   ];
 
   home.file.".config/tmux/dotfiles.tmux.conf".source = liveLink "tmux/.tmux.conf";

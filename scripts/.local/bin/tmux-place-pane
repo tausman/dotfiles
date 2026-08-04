@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Place a named pane at position 1 or 2 of the stage window (index 1).
+# Usage: tmux-place-pane <name> <1|2>
+#
+# Rule: evict whatever currently occupies <pos> (break it out to its own named
+# window), move <name> into <pos>, and leave the OTHER slot untouched. If <name> is
+# ALREADY at <pos>, it toggles out instead (popped to its own window) -- so the same
+# key both summons and dismisses a pane. Window 1
+# is renamed to whatever ends up in position 1, so the status bar reflects the
+# pos-1 pane. If <name> is already on stage in the other slot, moving it there
+# vacates that slot -- so promoting a pos-2 pane to pos 1 leaves it as the only
+# pane, per the intended behaviour.
+#
+# Companion to tmux-toggle-pane (which toggles a tool in/out of pos 2). Panes are
+# tagged with @pane_name so they always break back out to the right window; an
+# untagged pos-1 pane (e.g. a pre-existing nvim) falls back to the window name,
+# which in this model IS the pos-1 identity -- so it stays self-consistent.
+
+TARGET="$1"
+POS="$2"
+win="1"   # stage window index
+
+if [ -z "$TARGET" ] || { [ "$POS" != "1" ] && [ "$POS" != "2" ]; }; then
+  echo "Usage: tmux-place-pane <name> <1|2>" >&2
+  exit 1
+fi
+
+pane_count() { tmux list-panes -t ":$win" 2>/dev/null | wc -l | tr -d ' '; }
+
+# @pane_name of a pane; for pos 1, fall back to the stage window's name.
+name_of() { # <pane-ref> <is_pos1>
+  local n
+  n=$(tmux display-message -t "$1" -p '#{@pane_name}' 2>/dev/null)
+  if [ -z "$n" ] && [ "$2" = "1" ]; then
+    n=$(tmux display-message -t ":$win" -p '#{window_name}' 2>/dev/null)
+  fi
+  printf '%s' "$n"
+}
+
+target_window_exists() {
+  tmux list-windows -F '#{window_name}' 2>/dev/null | grep -qx "$TARGET"
+}
+
+evict() { # <pane-ref> <name>
+  if [ -n "$2" ]; then
+    tmux break-pane -d -s "$1" -n "$2"
+  else
+    tmux break-pane -d -s "$1"
+  fi
+}
+
+rename_stage_to_pos1() {
+  local n
+  n=$(name_of ":$win.1" 1)
+  if [ -n "$n" ]; then
+    tmux set-window-option -t ":$win" automatic-rename off 2>/dev/null
+    tmux rename-window -t ":$win" "$n"
+  fi
+}
+
+count=$(pane_count)
+name1=$(name_of ":$win.1" 1)
+name2=""
+[ "$count" -ge 2 ] && name2=$(name_of ":$win.2" 0)
+
+if [ "$POS" = "1" ]; then
+  placed=0
+  if [ "$name1" = "$TARGET" ]; then
+    # already at pos 1 -> toggle it out to its own window (unless it's the last pane,
+    # which would destroy the stage window)
+    if [ "$count" -ge 2 ]; then
+      evict ":$win.1" "$name1"
+      rename_stage_to_pos1
+    fi
+    exit 0
+  elif [ "$name2" = "$TARGET" ]; then
+    evict ":$win.1" "$name1"; placed=1         # pos 2 -> pos 1 (evict old pos 1)
+  elif target_window_exists; then
+    if [ "$count" -le 1 ]; then
+      # pos 2 is free, so nothing needs to leave the stage: insert TARGET to the LEFT
+      # of pos 1 (-b) and the old pos-1 pane simply demotes to pos 2.
+      tmux join-pane -h -b -s ":$TARGET" -t ":$win.1"
+      [ -n "$name1" ] && tmux set-option -p -t ":$win.2" @pane_name "$name1" 2>/dev/null
+    else
+      # pos 2 is taken: insert right of pos 1, then evict pos 1. Order after the join is
+      # old-pos1, TARGET, old-pos2 -> evicting .1 leaves TARGET at pos 1 with the old
+      # pos-2 pane untouched (evicting more than necessary would lose a pane you docked).
+      tmux join-pane -h -s ":$TARGET" -t ":$win.1"
+      evict ":$win.1" "$name1"
+    fi
+    placed=1
+  fi
+  if [ "$placed" = "1" ]; then
+    tmux set-option -p -t ":$win.1" @pane_name "$TARGET" 2>/dev/null
+    rename_stage_to_pos1
+  fi
+else                                            # POS == 2
+  if [ "$name2" = "$TARGET" ]; then
+    evict ":$win.2" "$name2"                    # already at pos 2 -> toggle it out
+  elif [ "$name1" = "$TARGET" ]; then
+    [ "$count" -ge 2 ] && evict ":$win.2" "$name2"   # TARGET is pos 1: just clear pos 2
+  else
+    [ "$count" -ge 2 ] && evict ":$win.2" "$name2"   # clear pos 2, then dock TARGET
+    if target_window_exists; then
+      tmux join-pane -h -s ":$TARGET" -t ":$win.1"
+      tmux set-option -p -t ":$win.2" @pane_name "$TARGET" 2>/dev/null
+    fi
+  fi
+  # tag pos 1 (so a legacy untagged pane gets a name) and keep the stage name.
+  [ -n "$name1" ] && tmux set-option -p -t ":$win.1" @pane_name "$name1" 2>/dev/null
+  rename_stage_to_pos1
+fi
