@@ -125,6 +125,15 @@ fi
 # PERSONAL CONFIGURATION
 # Use vi cursor change `vi-mode` plugin
 VI_MODE_SET_CURSOR=true
+# The plugin emits `\e[<shape> q` (DECSCUSR) on every mode change, and its defaults are the
+# STEADY shapes (2 = steady block, 6 = steady bar). Ghostty always honours DECSCUSR -- its
+# cursor-style-blink is only a default -- so those steady requests stop the cursor blinking.
+# (Alacritty hides this because its `blinking = "Always"` ignores DECSCUSR entirely.) These
+# are the blinking equivalents with the same shapes. Read at runtime, so setting them after
+# oh-my-zsh has loaded is fine.
+VI_MODE_CURSOR_NORMAL=1 # blinking block
+VI_MODE_CURSOR_INSERT=5 # blinking bar
+VI_MODE_CURSOR_VISUAL=1 # blinking block
 MODE_INDICATOR=
 
 # Use vim keybindings

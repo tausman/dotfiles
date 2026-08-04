@@ -1,5 +1,14 @@
 -- vim.opt.guicursor = ""
 
+-- Blinking cursor. Nvim's default guicursor sets blink timings only for terminal mode, so
+-- every other mode asks for a STEADY cursor -- and Ghostty honours that (its
+-- cursor-style-blink is only a default, unlike Alacritty's `blinking = "Always"`, which
+-- ignores the app). In a TUI nvim sends just the cursor *shape* via the Ss/Se terminfo caps
+-- (DECSCUSR), which carries no timing -- so these ms values only need to be NONZERO to ask
+-- for blinking; the actual rate is the terminal's and Ghostty doesn't expose it. Shapes are
+-- nvim's defaults; `a:` appends the blink to every mode.
+vim.opt.guicursor = "n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20,a:blinkwait200-blinkon200-blinkoff200"
+
 vim.o.exrc = true
 
 vim.opt.nu = true

@@ -39,3 +39,29 @@ size = 11.75
 style = { blinking = "Always" }
 blink_interval = 300
 blink_timeout = 0
+
+# Make Ctrl+Shift+<key> reach tmux, for the `C-a C-S-<X>` pane-placement bindings in
+# tmux/.tmux.conf. Alacritty doesn't negotiate extended keys (Ghostty does), so without
+# this Ctrl+Shift+C collapses to a plain Ctrl+C and silently triggers the position-2
+# binding instead. These send the sequences tmux parses as C-S-C / C-S-R / C-S-T / C-S-D:
+# CSI-u form `ESC [ <codepoint> ; 6 u`, where 6 = ctrl+shift and the codepoint is the
+# SHIFTED (uppercase) letter -- that is the variant tmux matches to C-S-<UPPERCASE>.
+[[keyboard.bindings]]
+key = "C"
+mods = "Control|Shift"
+chars = "\u001b[67;6u" # 67 = "C"
+
+[[keyboard.bindings]]
+key = "R"
+mods = "Control|Shift"
+chars = "\u001b[82;6u" # 82 = "R"
+
+[[keyboard.bindings]]
+key = "T"
+mods = "Control|Shift"
+chars = "\u001b[84;6u" # 84 = "T"
+
+[[keyboard.bindings]]
+key = "D"
+mods = "Control|Shift"
+chars = "\u001b[68;6u" # 68 = "D"
