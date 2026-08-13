@@ -9,6 +9,7 @@
     ../modules/neovim.nix
     ../modules/jj.nix
     ../modules/claude.nix
+    ../modules/pi.nix
     ../modules/dev.nix
     ../modules/nodejs.nix
     ../modules/ssh.nix
