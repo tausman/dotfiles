@@ -2,7 +2,8 @@
 # Self-contained setup for the nix-managed machines (the Ubuntu VM `bits`, and the mac).
 # This is the NEW installer and does NOT depend on install.sh: nix/home-manager own the
 # tools and dotfiles; this script does the one-time, non-nix work — the ssh Include, repos,
-# Claude plugins, pi, web-ui, and dogweb. It runs fully non-interactively, end to end.
+# Claude plugins, web-ui, and dogweb. It runs fully non-interactively, end to end.
+# (pi itself is a nix package now — nix-config/modules/pi.nix — so it needs no step here.)
 #
 # Do these first:
 #   1. Clone this repo:   git clone https://github.com/tausman/dotfiles.git ~/dotfiles
@@ -342,15 +343,6 @@ setup_claude() {
     echo "Claude setup complete."
 }
 
-# pi coding agent. node/npm come from nix; NPM_CONFIG_PREFIX is set by home-manager
-# (modules/zsh.nix) and sourced in apply_home_manager, so `npm install -g` lands in
-# ~/.local/bin instead of failing on the read-only /nix/store.
-setup_pi() {
-    echo "Setting up pi..."
-    npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-    echo "pi setup complete."
-}
-
 setup_web_ui() {
     echo "Setting up web-ui..."
     cd "$HOME/dd/web-ui"
@@ -415,7 +407,7 @@ setup_dogweb() {
 usage() {
     cat >&2 <<EOF
 Usage: $0 [command]
-  (none)   full setup: nix + home-manager + ssh + repos + claude + pi + web-ui + dogweb
+  (none)   full setup: nix + home-manager + ssh + repos + claude + web-ui + dogweb
   fast     full setup minus the heavy web-ui + dogweb steps
   nix      install Nix + apply home-manager (all packages + dotfiles), then stop
   auth     GitHub auth only (both accounts, per-account SSH keys, signing, SSO)
@@ -459,7 +451,6 @@ main() {
     colocate_dotfiles
     setup_repos
     setup_claude
-    setup_pi
 
     if [ "$cmd" = fast ]; then
         echo
