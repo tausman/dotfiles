@@ -80,6 +80,28 @@ simply inert in pi.
 To replace pi's *system prompt* rather than append instructions, use
 `~/.pi/agent/SYSTEM.md` (or `APPEND_SYSTEM.md` to add without replacing). Not used here.
 
+## Built-in tools
+
+pi enables **four** builtins by default — `read`, `bash`, `edit`, `write`. `grep`, `find`,
+and `ls` exist but are opt-in (`docs/quickstart.md`: "Additional built-in read-only tools
+… are available through tool options"). So the model reaches for `bash` + ripgrep instead;
+the nixpkgs derivation puts `rg` and `fd` on pi's PATH for exactly that reason.
+
+There is **no `tools` key in settings.json** — the only ways to enable the other three are
+the `--tools`/`-t` CLI flag or per-agent `tools:` frontmatter in `pi-subagents`.
+
+Do not wrap pi in a shell alias that passes `-t`. It is a strict allowlist over built-in
+*and* extension tools, so `pi -t read,bash,edit,write,grep,find,ls` yields exactly those
+seven and silently drops `mcp`, `subagent`, `web_search`, and everything else packages
+contribute. Verified.
+
+The `pi-tausman` agents leave `tools` unset on purpose. In `pi-subagents` an explicit list
+is a strict allowlist with no additive form, so naming `grep`/`find`/`ls` would cost the
+agents every extension tool (`mcp`, `web_search`, `datadog`, `ctx_*`). Omitting it gives
+them the four builtins plus all extensions — 29 tools, verified — which is the closest match
+to the "All tools" access they have in Claude. They use `bash` + ripgrep for search, exactly
+like the parent session does.
+
 ## What has no pi equivalent
 
 Things in `claude/.claude/settings.json` that intentionally did not carry over:
@@ -98,7 +120,7 @@ Things in `claude/.claude/settings.json` that intentionally did not carry over:
 
 Both come from the **`pi-tausman`** package at `~/pi-tausman`, listed in `packages`. It
 holds pi-adapted copies of the `~/claude-plugins/tausman` skills and agents: 10 skills as
-`/skill:<name>`, and 3 subagents dispatchable as `tausman.<name>` through `pi-subagents`.
+`/skill:<name>`, and 4 subagents dispatchable as `tausman.<name>` through `pi-subagents`.
 See that repo's README for what differs from the Claude originals and why.
 
 **`claude-marketplace` is deliberately not installed.** That package bridges Claude
