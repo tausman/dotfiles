@@ -76,10 +76,16 @@
     "trajectory@trajectory": true
   },
   "extraKnownMarketplaces": {
-    "datadog": {
+    "datadog-claude-plugins": {
       "source": {
         "source": "github",
         "repo": "DataDog/claude-marketplace"
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
       }
     },
     "tausman": {

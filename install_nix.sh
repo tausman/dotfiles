@@ -2,8 +2,10 @@
 # Self-contained setup for the nix-managed machines (the Ubuntu VM `bits`, and the mac).
 # This is the NEW installer and does NOT depend on install.sh: nix/home-manager own the
 # tools and dotfiles; this script does the one-time, non-nix work — the ssh Include, repos,
-# Claude plugins, web-ui, and dogweb. It runs fully non-interactively, end to end.
-# (pi itself is a nix package now — nix-config/modules/pi.nix — so it needs no step here.)
+# Claude plugins, the pi package, web-ui, and dogweb. It runs fully non-interactively, end
+# to end.
+# (pi itself is a nix package now — nix-config/modules/pi.nix — so only its ~/pi-tausman
+#  package repo needs cloning here; see setup_pi.)
 #
 # Do these first:
 #   1. Clone this repo:   git clone https://github.com/tausman/dotfiles.git ~/dotfiles
@@ -343,6 +345,29 @@ setup_claude() {
     echo "Claude setup complete."
 }
 
+# pi package (skills + codebase-research subagents), the pi counterpart to the Claude
+# plugin above. Cloning is the whole job: pi itself is nix-managed, and
+# pi/.pi/agent/settings.json (liveLinked by nix-config/modules/pi.nix) already lists
+# ~/pi-tausman in `packages`.
+#
+# Deliberately no `pi install` here. Local-path packages are loaded in place rather than
+# copied, so there is nothing to install — and `pi install` would rewrite the entry from
+# ~/pi-tausman to ../../pi-tausman, showing up as a spurious diff in dotfiles. The npm
+# packages in that same list need no help either: pi auto-installs missing ones on startup.
+#
+# The five ~/dd/datadog-pi-packages/... entries need that repo cloned, which setup_repos
+# already handles.
+setup_pi() {
+    echo "Setting up pi package..."
+    local pi_repo="git@github.com:tausman/pi-tausman.git"
+    local pi_dir="$HOME/pi-tausman"
+    [ -d "$pi_dir/.git" ] || git clone "$pi_repo" "$pi_dir"
+    if [ ! -d "$pi_dir/.jj" ]; then
+        ( cd "$pi_dir" && jj git init --colocate )
+    fi
+    echo "pi setup complete."
+}
+
 setup_web_ui() {
     echo "Setting up web-ui..."
     cd "$HOME/dd/web-ui"
@@ -407,7 +432,7 @@ setup_dogweb() {
 usage() {
     cat >&2 <<EOF
 Usage: $0 [command]
-  (none)   full setup: nix + home-manager + ssh + repos + claude + web-ui + dogweb
+  (none)   full setup: nix + home-manager + ssh + repos + claude + pi + web-ui + dogweb
   fast     full setup minus the heavy web-ui + dogweb steps
   nix      install Nix + apply home-manager (all packages + dotfiles), then stop
   auth     GitHub auth only (both accounts, per-account SSH keys, signing, SSO)
@@ -451,6 +476,7 @@ main() {
     colocate_dotfiles
     setup_repos
     setup_claude
+    setup_pi
 
     if [ "$cmd" = fast ]; then
         echo
