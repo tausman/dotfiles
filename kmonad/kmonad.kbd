@@ -50,8 +50,8 @@
   @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
   esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    @pun
-  @spe z    x    c    v    b    n    m    ,    .    /    rsft up
-  @fn  lalt lmet @num           spc            @nav ralt left down rght
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft up
+  @fn  lalt lmet @hsp           spc            @hpu ralt left down rght
 )
 
 ;; This allows me to use C-n && C-p for up && down _everywhere_
@@ -112,9 +112,20 @@
   _    _    _    _              _              ret  _    _    _    _
 )
 
+;; Vanilla passthrough: no home row mods, no thumb layers. Escape sits on caps, and
+;; cmd/ctrl are swapped (option unchanged). Grave keeps @grl so `1/`2/`3 can get back out.
+(deflayer plain
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  esc  a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft up
+  fn   lmet lalt lctl           spc            rctl ralt left down rght
+)
+
 (deflayer layers
   _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    @qwr @hom @new _    _    _    _    _    _    _    _    _    _
+  _    @qwr @hom @new @pln _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _
@@ -158,7 +169,13 @@
   ;; Grave with layer toggle
   grl (tap-hold-next-release 200 grv (layer-toggle layers))
 
+  ;; Hold-only thumb toggles for newmod: same layers as @spe/@pun, but tapping them
+  ;; emits nothing instead of bspc/ret (those taps live on lsft/ret instead).
+  hsp (layer-toggle special)
+  hpu (layer-toggle punctuation)
+
   ;; Layer switching
+  pln (layer-switch plain)
   new (layer-switch newmod)
   hom (layer-switch homemod)
   qwr (layer-switch qwerty)
