@@ -31,6 +31,16 @@ let
   #                   let macOS scale the window instead.
   vnc-start = pkgs.writeShellScriptBin "vnc-start" ''
     set -eu
+    # tigervnc's `vncserver` is a perl script that shells out to these by name, and it
+    # is NOT wrapped with them on PATH — without this it dies with
+    # `couldn't find "xinit" on your PATH`. Set it here rather than relying on the
+    # profile, so the session doesn't depend on how the shell was started; xstartup
+    # inherits this environment too.
+    #   xinit    launches the session (the failure above)
+    #   xauth    writes the ~/.Xauthority cookie the X clients authenticate with
+    #   xkbcomp  compiles the keymap; without it the keyboard is dead or scrambled
+    export PATH="${pkgs.tigervnc}/bin:${pkgs.xinit}/bin:${pkgs.xauth}/bin:${pkgs.xkbcomp}/bin:$PATH"
+
     display="''${1:-:1}"
     if [ -f "$HOME/.vnc/passwd" ]; then
       security=VncAuth

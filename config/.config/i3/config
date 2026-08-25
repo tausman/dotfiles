@@ -10,7 +10,7 @@ set $mod Mod1
 # xterm, not alacritty/ghostty: both are GPU-accelerated and need a working GLX/EGL
 # stack. Nix-built GL apps on a non-NixOS host hit the classic libGL mismatch (the
 # nixGL problem), and this VM has no GPU anyway. xterm is pure X11 and just works.
-set $term xterm
+set $term xterm -fa "DejaVu Sans Mono" -fs 11
 
 font pango:DejaVu Sans Mono 10
 
