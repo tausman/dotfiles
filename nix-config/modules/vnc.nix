@@ -17,23 +17,32 @@ let
   # Bring up the desktop. Xvnc is a *virtual* X server — no display hardware involved,
   # which is exactly why this belongs on a headless box.
   #   -localhost yes  bind loopback only, so the session is unreachable except through
-  #                   an SSH tunnel. Never drop this: VNC auth is an 8-character DES
-  #                   password and must not face the network.
+  #                   an SSH tunnel. This is the actual security boundary — reaching the
+  #                   session at all requires an SSH key — so never drop it.
+  #   -SecurityTypes  chosen from whether ~/.vnc/passwd exists. A VNC password is only a
+  #                   weak second factor over the tunnel (8 chars, DES, reversibly
+  #                   stored), guarding against other local users on this box. So it's
+  #                   optional: skip `vncpasswd` and loopback connections are accepted
+  #                   without one; run it later and this picks VncAuth up automatically,
+  #                   with no flag to remember. Note macOS's built-in Screen Sharing
+  #                   client is fussy about `None` — use TigerVNC Viewer if it refuses.
   #   -geometry       1920x1080 deliberately, not the mac's native retina size. Sending
   #                   2x pixels over the wire quadruples the bandwidth for nothing;
   #                   let macOS scale the window instead.
   vnc-start = pkgs.writeShellScriptBin "vnc-start" ''
     set -eu
     display="''${1:-:1}"
-    if [ ! -f "$HOME/.vnc/passwd" ]; then
-      echo "No ~/.vnc/passwd yet. Run: vncpasswd" >&2
-      exit 1
+    if [ -f "$HOME/.vnc/passwd" ]; then
+      security=VncAuth
+    else
+      security=None
     fi
+    echo "Starting $display (SecurityTypes=$security, loopback only)" >&2
     exec ${pkgs.tigervnc}/bin/vncserver "$display" \
       -geometry 1920x1080 \
       -depth 24 \
       -localhost yes \
-      -SecurityTypes VncAuth
+      -SecurityTypes "$security"
   '';
 
   vnc-stop = pkgs.writeShellScriptBin "vnc-stop" ''
@@ -65,8 +74,8 @@ in
 
     # X utilities worth having inside the session.
     xclip # clipboard from the shell
-    xorg.xrandr # inspect/change the session resolution
-    xorg.xdpyinfo # confirm the X server is actually up (used to smoke-test this)
+    xrandr # inspect/change the session resolution
+    xdpyinfo # confirm the X server is actually up (used to smoke-test this)
 
     # Fonts. Without these, and without fontconfig below, every web page and UI label
     # renders as tofu boxes: nix packages don't see Ubuntu's system font paths.

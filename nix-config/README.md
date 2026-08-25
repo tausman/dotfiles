@@ -381,7 +381,6 @@ plain re-run won't revert the VM to headless:
 
 ```sh
 DESKTOP=1 ./install_nix.sh nix     # on the VM; rm ~/.config/dotfiles/desktop to undo
-vncpasswd                          # once per VM — the secret lives outside nix
 vnc-start                          # brings up :1
 ```
 
@@ -392,9 +391,16 @@ ssh -L 5901:localhost:5901 workspace-tausman1    # 5900 + display number
 open vnc://localhost:5901
 ```
 
-The server binds loopback only (`-localhost yes`), so the tunnel is the only way in — VNC
-auth is an 8-character DES password and must never face the network. `vnc-stop` kills the
-session; it otherwise survives disconnects, tmux-style.
+The server binds loopback only (`-localhost yes`), so the SSH tunnel is the only way in
+and the SSH key is the real authentication. `vnc-stop` kills the session; it otherwise
+survives disconnects, tmux-style.
+
+**No VNC password needed.** `vnc-start` picks `-SecurityTypes` from whether `~/.vnc/passwd`
+exists: absent → `None`, present → `VncAuth`. So `vncpasswd` is optional — run it if you
+want a second factor against other local users on that box (it's 8 chars, DES, reversibly
+stored, so it adds little over the tunnel) and `vnc-start` picks it up with no flag to
+remember. Caveat: macOS's built-in Screen Sharing client is fussy about `None`; use
+TigerVNC Viewer if `open vnc://` refuses.
 
 Notes: no GPU, so rendering is software (fine for DOM/CSS, sluggish for WebGL and video).
 The session runs at 1920x1080 rather than the mac's retina size on purpose — 2x pixels
