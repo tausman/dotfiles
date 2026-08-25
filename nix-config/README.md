@@ -407,13 +407,22 @@ The server binds loopback only (`-localhost yes`), so the SSH tunnel is the only
 and the SSH key is the real authentication. `vnc-stop` kills the session; it otherwise
 survives disconnects, tmux-style.
 
-**No VNC password needed.** `vnc-start` picks `-SecurityTypes` from whether
-`~/.config/tigervnc/passwd` exists: absent → `None`, present → `VncAuth`. So `vncpasswd`
-is optional — run it if you
-want a second factor against other local users on that box (it's 8 chars, DES, reversibly
-stored, so it adds little over the tunnel) and `vnc-start` picks it up with no flag to
-remember. Caveat: macOS's built-in Screen Sharing client is fussy about `None`; use
-TigerVNC Viewer if `open vnc://` refuses.
+**Password: optional for TigerVNC Viewer, required for macOS Screen Sharing.**
+`vnc-start` picks `-SecurityTypes` from whether `~/.config/tigervnc/passwd` exists: absent
+→ `None`, present → `VncAuth`. Over the tunnel a password adds little (8 chars, DES,
+reversibly stored) and only guards against other local users on that box, so in principle
+it's optional.
+
+In practice macOS's built-in Screen Sharing client does **not** support the `None`
+security type — it prompts for a password and then cannot connect. If that's your viewer:
+
+```sh
+mkdir -p ~/.config/tigervnc
+vncpasswd ~/.config/tigervnc/passwd    # max 8 chars; answer "n" to view-only
+vnc-stop && vnc-start                  # SecurityTypes is read at Xvnc startup
+```
+
+TigerVNC Viewer handles `None` and needs none of this.
 
 Notes: no GPU, so rendering is software (fine for DOM/CSS, sluggish for WebGL and video).
 The session runs at 1920x1080 rather than the mac's retina size on purpose — 2x pixels

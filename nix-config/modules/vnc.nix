@@ -41,10 +41,17 @@ let
   #   -SecurityTypes  chosen from whether the password file exists. A VNC password is
   #                   only a weak second factor over the tunnel (8 chars, DES, reversibly
   #                   stored), guarding against other local users on this box. So it's
-  #                   optional: skip `vncpasswd` and loopback connections are accepted
-  #                   without one; run it later and this picks VncAuth up automatically.
-  #                   Note macOS's built-in Screen Sharing client is fussy about `None` —
-  #                   use TigerVNC Viewer if `open vnc://` refuses.
+  #                   optional: skip it and loopback connections are accepted without
+  #                   one; create one later and this picks VncAuth up automatically.
+  #
+  #                   BUT: macOS's built-in Screen Sharing client does not support the
+  #                   `None` type — it prompts for a password anyway and then can't
+  #                   connect. Confirmed in practice, not just in theory. So if that's
+  #                   your viewer, you DO need a password:
+  #                     mkdir -p ~/.config/tigervnc
+  #                     vncpasswd ~/.config/tigervnc/passwd   # max 8 chars, VNC limit
+  #                     vnc-stop && vnc-start                 # read at Xvnc startup
+  #                   TigerVNC Viewer handles `None` fine and needs none of this.
   #   -geometry       1920x1080 deliberately, not the mac's native retina size. Sending
   #                   2x pixels over the wire quadruples the bandwidth for nothing;
   #                   let macOS scale the window instead.
@@ -67,9 +74,13 @@ let
     state="${stateDir}"
     mkdir -p "$state"
 
-    if [ -f "$state/passwd" ] || [ -f "$HOME/.config/tigervnc/passwd" ]; then
+    # A password file here switches the session to VncAuth. This is the ONLY path
+    # consulted, deliberately: -rfbauth below points at it, so checking any other
+    # location could select VncAuth while pointing Xvnc at a file that doesn't exist.
+    passwd="$HOME/.config/tigervnc/passwd"
+    if [ -f "$passwd" ]; then
       security=VncAuth
-      auth="-rfbauth $HOME/.config/tigervnc/passwd"
+      auth="-rfbauth $passwd"
     else
       security=None
       auth=""
