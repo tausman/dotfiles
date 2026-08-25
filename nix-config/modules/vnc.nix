@@ -8,6 +8,17 @@ let
   #                           starts a GPU process that always dies ("GLX is not
   #                           present") before falling back to software rendering. This
   #                           skips the doomed process; rendering is unaffected.
+  #   --disable-dev-shm-usage the workspace is a Docker container, so /dev/shm is the
+  #                           64MB default. Chromium passes font data and IPC through
+  #                           shared memory there; once it fills, the font data service
+  #                           hits `Check failed: No space left on device` and the FATAL
+  #                           raises SIGTRAP, which surfaces as "Can't open this page".
+  #                           One tab took /dev/shm from 16MB to 31MB, so a handful of
+  #                           tabs exhausts it. This flag moves that allocation to /tmp.
+  #                           Verified: with it, /dev/shm usage stays flat and chromium
+  #                           holds no /dev/shm descriptors. Enlarging /dev/shm would
+  #                           also work (`mount -o remount,size=2G /dev/shm`) but needs
+  #                           root and is lost whenever the container is recreated.
   # The override rebuilds only the wrapper script, not chromium itself, so it's ~free.
   #
   # chromium rather than google-chrome for two reasons: it's free-licensed (google-chrome
@@ -16,7 +27,7 @@ let
   # flake.nix), and it's prebuilt in the binary cache for aarch64. To switch, set
   # config.allowUnfree in flake.nix's mkHome and change this to pkgs.google-chrome.
   chromium = pkgs.chromium.override {
-    commandLineArgs = "--password-store=basic --disable-gpu";
+    commandLineArgs = "--password-store=basic --disable-gpu --disable-dev-shm-usage";
   };
 
   tigervnc = pkgs.tigervnc;
@@ -101,7 +112,6 @@ let
       -SecurityTypes "$security" \
       -desktop "$(uname -n)$display" \
       $auth >"$state/Xvnc$display.log" 2>&1 &
-    echo $! >"$state/Xvnc$display.pid"
 
     # Wait for the RFB listener rather than sleeping a fixed amount. Plain arithmetic
     # rather than `seq`, to avoid depending on coreutils being on PATH.
@@ -116,6 +126,7 @@ let
       tail -20 "$state/Xvnc$display.log" >&2
       exit 1
     fi
+
 
     # Bridges the viewer's clipboard and the X session's selection, so copy/paste
     # between macOS and the desktop works. Without it, clipboard is one-way at best.
@@ -138,19 +149,33 @@ let
   vnc-stop = pkgs.writeShellScriptBin "vnc-stop" ''
     set -eu
     display="''${1:-:1}"
-    state="${stateDir}"
-    pidfile="$state/Xvnc$display.pid"
-    if [ ! -f "$pidfile" ]; then
-      echo "No pidfile at $pidfile; nothing to stop." >&2
+    num="''${display#:}"
+
+    # The X server's own lock file is the pid source of truth — no pidfile of our own to
+    # go stale. Two earlier approaches were both wrong and are worth not repeating:
+    #   `$!` from vnc-start   setsid forks when it is already a process group leader, so
+    #                         `$!` is sometimes setsid's pid, not Xvnc's. Intermittent.
+    #   `pgrep -f bin/Xvnc`   ALSO matches any shell whose command line happens to
+    #                         contain that string — including the very shell running this
+    #                         command. That killed a live SSH session during testing.
+    # Hence the comm check below: we kill a pid only after confirming it really is Xvnc,
+    # so a stale lock naming a recycled pid can never take out an unrelated process.
+    lock="/tmp/.X''${num}-lock"
+    if [ ! -f "$lock" ]; then
+      echo "No X server on $display; nothing to stop." >&2
       exit 0
     fi
-    pid="$(cat "$pidfile")"
+    pid="$(tr -dc "0-9" < "$lock")"
+    if [ -z "$pid" ] || [ "$(cat /proc/"$pid"/comm 2>/dev/null)" != "Xvnc" ]; then
+      echo "Lock $lock does not name a running Xvnc; leaving it alone." >&2
+      exit 0
+    fi
     if kill "$pid" 2>/dev/null; then
       echo "Stopped $display (pid $pid)." >&2
     else
-      echo "Process $pid not running; clearing stale pidfile." >&2
+      echo "Failed to kill Xvnc pid $pid." >&2
+      exit 1
     fi
-    rm -f "$pidfile"
   '';
 in
 {
