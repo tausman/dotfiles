@@ -1,0 +1,97 @@
+# AeroSpace — tiling window manager for macOS. Deliberately a port of the i3 config
+# used on the Ubuntu workspace (config/.config/i3/config): same alt modifier, same
+# vim-key focus/move, same workspace numbers, so muscle memory transfers both ways.
+#
+# Linked live from the dotfiles (nix-config/modules/aerospace.nix), so edits here apply
+# on the next `alt-shift-c` (reload-config) — no darwin-rebuild needed. The app itself is
+# a Homebrew cask, declared in nix-config/darwin.nix.
+
+# AeroSpace launches itself at login (it's a brew cask, not a nix-managed launchd job).
+start-at-login = true
+after-login-command = []
+after-startup-command = []
+
+# Both off to get i3's manual tiling. With normalization on, AeroSpace rewrites the
+# tree behind your back (collapsing single-child containers, forcing alternating
+# orientations), which makes an explicit `split` land somewhere you didn't ask for.
+enable-normalization-flatten-containers = false
+enable-normalization-opposite-orientation-for-nested-containers = false
+
+accordion-padding = 30
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# Mouse follows focus across monitors, matching how focus moves with the keyboard.
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+[gaps]
+inner.horizontal = 6
+inner.vertical = 6
+outer.left = 6
+outer.right = 6
+outer.top = 6
+outer.bottom = 6
+
+[key-mapping]
+preset = 'qwerty'
+
+# --- main mode -------------------------------------------------------------------
+# alt (Option), NOT cmd: macOS reserves most cmd combos system-wide, and alt is what
+# the i3 config uses ($mod = Mod1).
+[mode.main.binding]
+
+# launching. `open -na` forces a NEW instance rather than raising the running one,
+# which is what i3's `exec $term` does.
+alt-enter = 'exec-and-forget open -na Ghostty'
+alt-b = 'exec-and-forget open -na "Google Chrome"'
+alt-shift-q = 'close'
+
+# focus (vim keys)
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# move (vim keys)
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# layout. AeroSpace's `layout` toggles between the listed values, so a single key
+# flips back and forth like i3's `layout toggle`.
+alt-v = 'split vertical'
+alt-s = 'split horizontal'
+alt-f = 'fullscreen'
+alt-e = 'layout tiles horizontal vertical'
+alt-w = 'layout accordion horizontal vertical'
+alt-shift-space = 'layout floating tiling'
+
+# workspaces
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+alt-shift-4 = 'move-node-to-workspace 4'
+alt-shift-5 = 'move-node-to-workspace 5'
+alt-tab = 'workspace-back-and-forth'
+
+# monitors (no i3 equivalent needed there — the VNC session is single-display)
+alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# AeroSpace itself
+alt-shift-c = 'reload-config'
+alt-r = 'mode resize'
+
+# --- resize mode -----------------------------------------------------------------
+[mode.resize.binding]
+h = 'resize width -50'
+j = 'resize height +50'
+k = 'resize height -50'
+l = 'resize width +50'
+enter = 'mode main'
+esc = 'mode main'

@@ -6,9 +6,10 @@ Nix-based machine setup. On macOS this is driven by [nix-darwin](https://github.
 
 The home-manager config is layered **modules → profiles → hosts**:
 
-- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad, vnc, …).
+- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad,
+  aerospace, vnc, …).
 - `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `darwin.nix`
-  (alacritty + ghostty + kmonad), `desktop.nix` (= base + darwin), `headless.nix` (= base),
+  (alacritty + ghostty + kmonad + aerospace), `desktop.nix` (= base + darwin), `headless.nix` (= base),
   `remote-desktop.nix` (= headless + vnc).
 - `hosts/` — pure identity (username/home) + one profile import: `mac.nix` → `desktop`,
   `linux.nix` → `headless`, `linux-desktop.nix` → `remote-desktop`.
@@ -221,14 +222,34 @@ the path, so this also covers the root daemon at Part 2):
 Click `+`, `Cmd+Shift+G`, paste that path. Also enable your terminal (Alacritty) if you
 plan to run kmonad in the foreground for debugging.
 
+### 13. Grant AeroSpace Accessibility
+
+AeroSpace (tiling window manager) needs **Accessibility** to move and resize windows —
+without it, it starts, sees your windows, and silently can't touch them. In **System
+Settings → Privacy & Security → Accessibility**, add and enable:
+
+```
+/Applications/AeroSpace.app
+```
+
+Do this *after* the first `darwin-rebuild` in Part 2 — Homebrew installs the app there,
+so it doesn't exist until then. macOS usually prompts on first launch, in which case
+just approve and skip this step.
+
+> Installing AeroSpace as a **cask** rather than `pkgs.aerospace` is deliberate: the
+> Accessibility grant is keyed to the binary's path, and a nix store path changes on
+> every version bump, so a nix-installed AeroSpace has to be re-granted each time.
+> `/Applications/AeroSpace.app` is stable.
+
 ---
 
 ## Part 2 — Apply the config (the two switches)
 
-Run **home-manager first** (deploys your user env, including `~/.config/kmonad.kbd`),
-**then darwin-rebuild** (system: Homebrew, and the kmonad + Karabiner launchd daemons).
-Ordering it this way means the kmonad config already exists when the daemon is created,
-so it comes up cleanly.
+Run **home-manager first** (deploys your user env, including `~/.config/kmonad.kbd` and
+`~/.config/aerospace/aerospace.toml`), **then darwin-rebuild** (system: Homebrew — which
+is what installs AeroSpace — plus the kmonad + Karabiner launchd daemons). Ordering it
+this way means both configs already exist when the things that read them appear, so they
+come up cleanly.
 
 **First-time bootstrap** (tools not yet installed) — via `nix run`:
 
@@ -308,6 +329,51 @@ sudo ~/.local/bin/kmonad ~/.config/kmonad.kbd
   `~/.config/kmonad.kbd` → `../kmonad/kmonad.kbd`.
 - `../kmonad/com.example.kmonad.plist` is a manual-install reference for **non-nix**
   machines only — do not load it here (nix-darwin already manages the daemon).
+
+## How AeroSpace is wired
+
+- `darwin.nix` → the `nikitabobko/tap` tap + the `nikitabobko/tap/aerospace` cask. The
+  cask also installs the `aerospace` CLI and its shell completions. AeroSpace starts
+  itself (`start-at-login = true` in the TOML), so there's no launchd job — unlike
+  kmonad, nix doesn't own its lifecycle. That's the trade for a stable
+  `/Applications/AeroSpace.app` and an Accessibility grant that survives upgrades.
+- `modules/aerospace.nix` (via `profiles/darwin.nix`, mac only) → links
+  `~/.config/aerospace/aerospace.toml` → `../config/.config/aerospace/aerospace.toml`.
+  That's one of the two paths AeroSpace checks by default, so nothing has to point at it.
+- Deliberately **not** nix-darwin's `services.aerospace`, which renders the TOML into
+  `/nix/store` — every keybinding tweak would then need a `darwin-rebuild`. With the live
+  symlink, edit the file and hit `alt-shift-c` (`reload-config`).
+- The keymap is a port of `config/.config/i3/config` (the Linux VNC session): `alt` as the
+  modifier, vim keys for focus/move, workspaces 1–5, `alt-r` for resize mode. Keeping the
+  two in sync means the muscle memory transfers.
+- `system.defaults.dock.mru-spaces = false` is required — macOS reordering Spaces by
+  recency desyncs AeroSpace's workspace-to-monitor mapping.
+- Replaced Rectangle (`pkgs.rectangle`, now removed from `environment.systemPackages`).
+  Two window managers fighting over the same windows glitches; `/Applications/Rectangle.app`
+  is an MDM/manual install and is not nix-managed — remove it by hand if you want it gone.
+
+Check it:
+
+```sh
+aerospace list-windows --all      # talks to the running instance; errors if it's down
+aerospace list-workspaces --all
+brew info --cask nikitabobko/tap/aerospace
+```
+
+### On `alt` and special characters
+
+Bound combos are safe. AeroSpace registers its hotkeys through Carbon's
+`RegisterEventHotKey` (verified: the binary imports `_RegisterEventHotKey`, not
+`CGEventTapCreate`), and the system consumes a registered hotkey before it reaches the
+focused app — so `alt-l` moves focus and does *not* type `¬`.
+
+The Option layer is still live for combos AeroSpace **doesn't** bind (`alt-p` → `π`, etc.),
+and macOS has no global switch to turn that off — it's a property of the keyboard layout.
+If you ever want it truly gone, the route is a custom layout with the Option layer
+stripped (build one with Ukelele, drop the `.bundle` in `~/Library/Keyboard Layouts`, then
+select it under Input Sources — the file could be nix-managed, but selecting it is manual).
+kmonad can't do it: it sits upstream of the layout, so it remaps *which* key arrives, not
+what the layout composes from it.
 
 ## How the zsh config is wired (don't edit dotfiles in `$HOME` directly)
 

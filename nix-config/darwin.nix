@@ -15,7 +15,6 @@
   environment.systemPackages = [
     pkgs.alacritty
     pkgs.drawio
-    pkgs.rectangle
   ];
 
   system.keyboard = {
@@ -86,6 +85,10 @@
       show-recents = false;
       # Only show currently-running apps in the Dock, no persistent icons.
       static-only = true;
+      # Required by AeroSpace: with "automatically rearrange Spaces based on most
+      # recent use" left on, macOS reorders Spaces underneath the WM and its
+      # workspace-to-monitor mapping drifts out of sync.
+      mru-spaces = false;
     };
 
     finder = {
@@ -121,6 +124,8 @@
         name = "datadog/tap";
         clone_target = "git@github.com:DataDog/homebrew-tap.git";
       }
+      # AeroSpace (tiling WM) ships from the author's own tap.
+      "nikitabobko/tap"
     ];
 
     # git and go are also nix-managed in home.nix, but they're top-level brew installs
@@ -170,6 +175,12 @@
 
     casks = [
       "1password-cli"
+      # AeroSpace (tiling window manager). Brew rather than pkgs.aerospace: the cask
+      # lands at a stable /Applications/AeroSpace.app, so the Accessibility grant
+      # survives version bumps — a nix store path changes on every bump and has to be
+      # re-granted. It also brings the `aerospace` CLI + shell completions, and starts
+      # itself via start-at-login in aerospace.toml, so no launchd job is needed.
+      "nikitabobko/tap/aerospace"
       "claude"
       "gcloud-cli"
       "ghostty"

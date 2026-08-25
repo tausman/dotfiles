@@ -9,10 +9,12 @@
   #   alacritty — GUI terminal config + the Hack Nerd Font both terminals reference.
   #   ghostty   — GUI terminal config (font comes from the alacritty module).
   #   kmonad    — keyboard remap config, read by the launchd daemon in darwin.nix.
+  #   aerospace — tiling WM config, read by the launchd agent in darwin.nix.
   imports = [
     ../modules/alacritty.nix
     ../modules/ghostty.nix
     ../modules/kmonad.nix
+    ../modules/aerospace.nix
   ];
 
   # Mac-only tools.
