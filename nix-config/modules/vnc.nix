@@ -1,9 +1,14 @@
 { pkgs, liveLink, ... }:
 let
-  # Chromium with the password-store nag disabled. Under a bare WM there's no
-  # gnome-keyring / dbus secret service, so the default `--password-store=detect`
-  # picks the keyring, fails to reach it, and prompts on every launch. The override
-  # rebuilds only the wrapper script, not chromium itself, so it's ~free.
+  # Chromium with two flags baked in:
+  #   --password-store=basic  under a bare WM there's no gnome-keyring / dbus secret
+  #                           service, so the default `detect` picks the keyring, fails
+  #                           to reach it, and prompts on every launch.
+  #   --disable-gpu           this VM has no GPU and Xvnc exposes no GLX, so chromium
+  #                           starts a GPU process that always dies ("GLX is not
+  #                           present") before falling back to software rendering. This
+  #                           skips the doomed process; rendering is unaffected.
+  # The override rebuilds only the wrapper script, not chromium itself, so it's ~free.
   #
   # chromium rather than google-chrome for two reasons: it's free-licensed (google-chrome
   # is unfree, and the flake passes `pkgs` in directly, so home-manager's
@@ -11,53 +16,130 @@ let
   # flake.nix), and it's prebuilt in the binary cache for aarch64. To switch, set
   # config.allowUnfree in flake.nix's mkHome and change this to pkgs.google-chrome.
   chromium = pkgs.chromium.override {
-    commandLineArgs = "--password-store=basic";
+    commandLineArgs = "--password-store=basic --disable-gpu";
   };
 
-  # Bring up the desktop. Xvnc is a *virtual* X server — no display hardware involved,
-  # which is exactly why this belongs on a headless box.
-  #   -localhost yes  bind loopback only, so the session is unreachable except through
-  #                   an SSH tunnel. This is the actual security boundary — reaching the
-  #                   session at all requires an SSH key — so never drop it.
-  #   -SecurityTypes  chosen from whether ~/.vnc/passwd exists. A VNC password is only a
-  #                   weak second factor over the tunnel (8 chars, DES, reversibly
+  tigervnc = pkgs.tigervnc;
+
+  # Where logs and the pidfile go. Not ~/.vnc: TigerVNC 1.16 treats that as a legacy
+  # path and warns about it if it exists at all.
+  stateDir = "$HOME/.local/state/vnc";
+
+  # Bring up the desktop.
+  #
+  # This drives `Xvnc` directly instead of TigerVNC's `vncserver` wrapper, which cannot
+  # work here. In 1.16 that wrapper takes a display and nothing else (all options come
+  # from a config file), it ignores ~/.vnc/xstartup entirely, and it locates the session
+  # via a hardcoded `/usr/share/xsessions/$name.desktop` — no XDG search path, no home
+  # directory. That path doesn't exist on this VM and creating it needs root, which would
+  # put the session outside nix. Xvnc takes every option on the command line, so driving
+  # it directly keeps the whole thing in user space and under this module's control.
+  #
+  #   -localhost      bind loopback only, so the session is unreachable except through
+  #                   an SSH tunnel. This is the actual security boundary — reaching it
+  #                   at all requires an SSH key — so never drop it.
+  #   -SecurityTypes  chosen from whether the password file exists. A VNC password is
+  #                   only a weak second factor over the tunnel (8 chars, DES, reversibly
   #                   stored), guarding against other local users on this box. So it's
   #                   optional: skip `vncpasswd` and loopback connections are accepted
-  #                   without one; run it later and this picks VncAuth up automatically,
-  #                   with no flag to remember. Note macOS's built-in Screen Sharing
-  #                   client is fussy about `None` — use TigerVNC Viewer if it refuses.
+  #                   without one; run it later and this picks VncAuth up automatically.
+  #                   Note macOS's built-in Screen Sharing client is fussy about `None` —
+  #                   use TigerVNC Viewer if `open vnc://` refuses.
   #   -geometry       1920x1080 deliberately, not the mac's native retina size. Sending
   #                   2x pixels over the wire quadruples the bandwidth for nothing;
   #                   let macOS scale the window instead.
+  #   -AlwaysShared   a reconnect (laptop sleep, dropped tunnel) joins the session rather
+  #                   than being refused.
+  #
+  # No -fp: Xvnc starts fine with no core-X11 font path on this box, and there are no
+  # core font dirs to point at anyway. That's why the i3 config runs xterm with an Xft
+  # font (-fa) — a bare xterm wants the core `fixed` font and would fail.
   vnc-start = pkgs.writeShellScriptBin "vnc-start" ''
     set -eu
-    # tigervnc's `vncserver` is a perl script that shells out to these by name, and it
-    # is NOT wrapped with them on PATH — without this it dies with
-    # `couldn't find "xinit" on your PATH`. Set it here rather than relying on the
-    # profile, so the session doesn't depend on how the shell was started; xstartup
-    # inherits this environment too.
-    #   xinit    launches the session (the failure above)
-    #   xauth    writes the ~/.Xauthority cookie the X clients authenticate with
-    #   xkbcomp  compiles the keymap; without it the keyboard is dead or scrambled
-    export PATH="${pkgs.tigervnc}/bin:${pkgs.xinit}/bin:${pkgs.xauth}/bin:${pkgs.xkbcomp}/bin:$PATH"
+
+    # Xvnc shells out to xkbcomp by name to compile the keymap. setsid detaches the
+    # session so it survives the SSH connection that started it.
+    export PATH="${pkgs.xkbcomp}/bin:${pkgs.util-linux}/bin:$PATH"
 
     display="''${1:-:1}"
-    if [ -f "$HOME/.vnc/passwd" ]; then
+    num="''${display#:}"
+    port="$((5900 + num))"
+    state="${stateDir}"
+    mkdir -p "$state"
+
+    if [ -f "$state/passwd" ] || [ -f "$HOME/.config/tigervnc/passwd" ]; then
       security=VncAuth
+      auth="-rfbauth $HOME/.config/tigervnc/passwd"
     else
       security=None
+      auth=""
     fi
-    echo "Starting $display (SecurityTypes=$security, loopback only)" >&2
-    exec ${pkgs.tigervnc}/bin/vncserver "$display" \
+
+    if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+      echo "Already running on $display (port $port)." >&2
+      exit 0
+    fi
+
+    # shellcheck disable=SC2086
+    setsid ${tigervnc}/bin/Xvnc "$display" \
       -geometry 1920x1080 \
       -depth 24 \
-      -localhost yes \
-      -SecurityTypes "$security"
+      -rfbport "$port" \
+      -localhost \
+      -AlwaysShared \
+      -SecurityTypes "$security" \
+      -desktop "$(uname -n)$display" \
+      $auth >"$state/Xvnc$display.log" 2>&1 &
+    echo $! >"$state/Xvnc$display.pid"
+
+    # Wait for the RFB listener rather than sleeping a fixed amount. Plain arithmetic
+    # rather than `seq`, to avoid depending on coreutils being on PATH.
+    tries=0
+    while [ "$tries" -lt 40 ]; do
+      if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then break; fi
+      tries="$((tries + 1))"
+      sleep 0.25
+    done
+    if ! (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+      echo "Xvnc failed to start. Log:" >&2
+      tail -20 "$state/Xvnc$display.log" >&2
+      exit 1
+    fi
+
+    # Bridges the viewer's clipboard and the X session's selection, so copy/paste
+    # between macOS and the desktop works. Without it, clipboard is one-way at best.
+    DISPLAY="$display" setsid ${tigervnc}/bin/vncconfig -nowin \
+      >"$state/vncconfig$display.log" 2>&1 &
+
+    DISPLAY="$display" setsid ${pkgs.i3}/bin/i3 \
+      >"$state/i3$display.log" 2>&1 &
+
+    cat >&2 <<EOF
+    Desktop up on $display (port $port, SecurityTypes=$security, loopback only).
+    From the mac:
+      ssh -L $port:localhost:$port workspace-$(uname -n)
+      open vnc://localhost:$port
+    Logs: $state
+    EOF
   '';
 
+  # Killing Xvnc is enough: i3 and every other client lose their display and exit.
   vnc-stop = pkgs.writeShellScriptBin "vnc-stop" ''
     set -eu
-    exec ${pkgs.tigervnc}/bin/vncserver -kill "''${1:-:1}"
+    display="''${1:-:1}"
+    state="${stateDir}"
+    pidfile="$state/Xvnc$display.pid"
+    if [ ! -f "$pidfile" ]; then
+      echo "No pidfile at $pidfile; nothing to stop." >&2
+      exit 0
+    fi
+    pid="$(cat "$pidfile")"
+    if kill "$pid" 2>/dev/null; then
+      echo "Stopped $display (pid $pid)." >&2
+    else
+      echo "Process $pid not running; clearing stale pidfile." >&2
+    fi
+    rm -f "$pidfile"
   '';
 in
 {
@@ -65,15 +147,14 @@ in
   # from the mac over an SSH tunnel. Imported only by profiles/remote-desktop.nix, so a
   # plain `headless` host is unaffected.
   #
-  # Connect from the mac:
-  #   ssh -L 5901:localhost:5901 workspace-tausman1   # tunnel (5900 + display number)
-  #   open vnc://localhost:5901                       # macOS's built-in client
+  #   vnc-start        bring up :1 (pass :2 etc. for another)
+  #   vnc-stop         tear it down
+  #   vncpasswd        optional — see the -SecurityTypes note above
   #
-  # First run on a new VM needs `vncpasswd` once — the password lives in ~/.vnc/passwd,
-  # outside nix, since it's a secret.
+  # The session survives disconnects, tmux-style; reconnecting rejoins it.
 
   home.packages = with pkgs; [
-    tigervnc # Xvnc + vncserver/vncpasswd/vncconfig
+    tigervnc # Xvnc + vncpasswd/vncconfig
     i3
     i3status
     dmenu
@@ -85,7 +166,8 @@ in
     # X utilities worth having inside the session.
     xclip # clipboard from the shell
     xrandr # inspect/change the session resolution
-    xdpyinfo # confirm the X server is actually up (used to smoke-test this)
+    xdpyinfo # confirm the X server is actually up
+    xkbcomp # Xvnc needs it for the keymap; also useful by hand
 
     # Fonts. Without these, and without fontconfig below, every web page and UI label
     # renders as tofu boxes: nix packages don't see Ubuntu's system font paths.
@@ -99,27 +181,6 @@ in
   # Generates ~/.config/fontconfig pointing at the nix profile's fonts. Required on a
   # non-NixOS host, where nothing else tells nix-built apps where fonts live.
   fonts.fontconfig.enable = true;
-
-  # Session entry point. tigervnc's `vncserver` runs this with DISPLAY already pointing
-  # at the new Xvnc; when it exits, the session ends. Store paths are absolute because
-  # this runs with whatever environment vncserver inherited, which may not have the nix
-  # profile on PATH.
-  home.file.".vnc/xstartup" = {
-    executable = true;
-    text = ''
-      #!/bin/sh
-      # Inherited values from the SSH session would point at a bus/session that isn't
-      # ours; leave them unset so nothing tries to reuse them.
-      unset SESSION_MANAGER DBUS_SESSION_BUS_ADDRESS
-      export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-
-      # Bridges the viewer's clipboard and the X session's selection, so copy/paste
-      # between macOS and the desktop works. Without it, clipboard is one-way at best.
-      ${pkgs.tigervnc}/bin/vncconfig -nowin &
-
-      exec ${pkgs.i3}/bin/i3
-    '';
-  };
 
   # liveLink, not a store copy, so the config is editable in place and `$mod+Shift+r`
   # picks up edits without a home-manager switch.

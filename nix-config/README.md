@@ -372,9 +372,21 @@ User is `bits`, home `/home/bits`.
 than replacing, so a VM with no desktop stays a valid role and `headless` is still
 importable on its own.
 
-`modules/vnc.nix` installs TigerVNC, i3, chromium, and fonts, writes `~/.vnc/xstartup`,
-and liveLinks `~/.config/i3/config` from `config/.config/i3/config`. Xvnc is a *virtual* X
-server — no display hardware — which is exactly why it suits a headless box.
+`modules/vnc.nix` installs TigerVNC, i3, chromium, and fonts, provides `vnc-start` /
+`vnc-stop`, and liveLinks `~/.config/i3/config` from `config/.config/i3/config`. Xvnc is a
+*virtual* X server — no display hardware — which is exactly why it suits a headless box.
+
+`vnc-start` drives `Xvnc` directly rather than going through TigerVNC's `vncserver`
+wrapper. As of 1.16 that wrapper takes a display and nothing else (options come from a
+config file), ignores `~/.vnc/xstartup` entirely, and finds the session through a
+hardcoded `/usr/share/xsessions/$name.desktop` — no XDG search path, no home directory.
+That directory doesn't exist on the VM and creating it needs root, which would put the
+session outside nix. Xvnc accepts every option on the command line, so driving it directly
+keeps everything in user space. Nothing is written to `~/.vnc`; TigerVNC 1.16 treats that
+as legacy and warns if it merely exists.
+
+Logs and the pidfile live in `~/.local/state/vnc`. `vnc-stop` kills Xvnc, and every client
+(i3, terminals, chromium) exits with the display.
 
 Opt in per machine; the choice is sticky via `~/.config/dotfiles/desktop`, so a later
 plain re-run won't revert the VM to headless:
@@ -395,8 +407,9 @@ The server binds loopback only (`-localhost yes`), so the SSH tunnel is the only
 and the SSH key is the real authentication. `vnc-stop` kills the session; it otherwise
 survives disconnects, tmux-style.
 
-**No VNC password needed.** `vnc-start` picks `-SecurityTypes` from whether `~/.vnc/passwd`
-exists: absent → `None`, present → `VncAuth`. So `vncpasswd` is optional — run it if you
+**No VNC password needed.** `vnc-start` picks `-SecurityTypes` from whether
+`~/.config/tigervnc/passwd` exists: absent → `None`, present → `VncAuth`. So `vncpasswd`
+is optional — run it if you
 want a second factor against other local users on that box (it's 8 chars, DES, reversibly
 stored, so it adds little over the tunnel) and `vnc-start` picks it up with no flag to
 remember. Caveat: macOS's built-in Screen Sharing client is fussy about `None`; use
