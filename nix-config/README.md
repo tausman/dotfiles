@@ -6,14 +6,21 @@ Nix-based machine setup. On macOS this is driven by [nix-darwin](https://github.
 
 The home-manager config is layered **modules → profiles → hosts**:
 
-- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad, …).
-- `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `gui.nix`
-  (alacritty + kmonad), `desktop.nix` (= base + gui), `headless.nix` (= base).
+- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad, vnc, …).
+- `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `darwin.nix`
+  (alacritty + ghostty + kmonad), `desktop.nix` (= base + darwin), `headless.nix` (= base),
+  `remote-desktop.nix` (= headless + vnc).
 - `hosts/` — pure identity (username/home) + one profile import: `mac.nix` → `desktop`,
-  `linux.nix` → `headless`.
+  `linux.nix` → `headless`, `linux-desktop.nix` → `remote-desktop`.
+
+`darwin.nix` was `gui.nix`. Nothing in it was ever about *having a display* — alacritty and
+ghostty are installed as apps by Homebrew and those modules only link configs, and kmonad's
+launchd daemon is macOS-only — so it's named for the axis it actually tracks. The Linux
+remote desktop shares none of it.
 
 The flake maps each target name to a host file: `default` → `hosts/mac.nix`,
-`ubuntu-{aarch64,x86_64}` → `hosts/linux.nix`. Role differences (GUI vs headless) are
+`ubuntu-{aarch64,x86_64}` → `hosts/linux.nix`, `ubuntu-{aarch64,x86_64}-desktop` →
+`hosts/linux-desktop.nix`. Role differences (GUI vs headless) are
 expressed by *which profile a host imports* — no `if` branches. The one genuine platform
 gate is Homebrew's shellenv, guarded on `pkgs.stdenv.isDarwin` inside `modules/zsh.nix`
 (empty on Linux).
@@ -297,7 +304,7 @@ sudo ~/.local/bin/kmonad ~/.config/kmonad.kbd
 - `darwin.nix` → `launchd.daemons.kmonad` runs `~/.local/bin/kmonad` (hand-built, step 10)
   against `~/.config/kmonad.kbd`, and `launchd.daemons.karabiner-vhid` runs the driver
   daemon. Both `RunAtLoad` + `KeepAlive`.
-- `modules/kmonad.nix` (imported via `profiles/gui.nix`, so only on the mac) → links
+- `modules/kmonad.nix` (imported via `profiles/darwin.nix`, so only on the mac) → links
   `~/.config/kmonad.kbd` → `../kmonad/kmonad.kbd`.
 - `../kmonad/com.example.kmonad.plist` is a manual-install reference for **non-nix**
   machines only — do not load it here (nix-darwin already manages the daemon).
@@ -347,16 +354,53 @@ via `modules/core.nix`'s `home.sessionPath`.
 ## Ubuntu / Linux (headless VM)
 
 The Linux path is **home-manager only** — no nix-darwin (macOS-only), no kmonad, no
-Homebrew/casks, no GUI apps (Alacritty). It shares all the `modules/` tool leaves with the
-mac via `hosts/linux.nix` → `profiles/headless.nix` → `profiles/base.nix`; it just doesn't
-pull in `profiles/gui.nix`, and the brew `profileExtra` in `modules/zsh.nix` is empty off
-Darwin. Two arch-specific flake outputs exist, both mapping to `hosts/linux.nix`, identical
-apart from the `system` string:
+Homebrew/casks. It shares all the `modules/` tool leaves with the mac via
+`hosts/linux.nix` → `profiles/headless.nix` → `profiles/base.nix`; it just doesn't pull in
+`profiles/darwin.nix`, and the brew `profileExtra` in `modules/zsh.nix` is empty off
+Darwin. Four flake outputs exist — two arches × two roles — identical apart from the
+`system` string and the profile:
 
-- `homeConfigurations."ubuntu-aarch64"` — ARM64
-- `homeConfigurations."ubuntu-x86_64"` — Intel/AMD
+- `homeConfigurations."ubuntu-aarch64"` / `."ubuntu-x86_64"` — headless
+- `homeConfigurations."ubuntu-aarch64-desktop"` / `."ubuntu-x86_64-desktop"` — headless
+  plus the VNC remote desktop
 
 User is `bits`, home `/home/bits`.
+
+### Remote desktop (VNC)
+
+`profiles/remote-desktop.nix` = `headless.nix` + `modules/vnc.nix`. It layers on top rather
+than replacing, so a VM with no desktop stays a valid role and `headless` is still
+importable on its own.
+
+`modules/vnc.nix` installs TigerVNC, i3, chromium, and fonts, writes `~/.vnc/xstartup`,
+and liveLinks `~/.config/i3/config` from `config/.config/i3/config`. Xvnc is a *virtual* X
+server — no display hardware — which is exactly why it suits a headless box.
+
+Opt in per machine; the choice is sticky via `~/.config/dotfiles/desktop`, so a later
+plain re-run won't revert the VM to headless:
+
+```sh
+DESKTOP=1 ./install_nix.sh nix     # on the VM; rm ~/.config/dotfiles/desktop to undo
+vncpasswd                          # once per VM — the secret lives outside nix
+vnc-start                          # brings up :1
+```
+
+From the mac:
+
+```sh
+ssh -L 5901:localhost:5901 workspace-tausman1    # 5900 + display number
+open vnc://localhost:5901
+```
+
+The server binds loopback only (`-localhost yes`), so the tunnel is the only way in — VNC
+auth is an 8-character DES password and must never face the network. `vnc-stop` kills the
+session; it otherwise survives disconnects, tmux-style.
+
+Notes: no GPU, so rendering is software (fine for DOM/CSS, sluggish for WebGL and video).
+The session runs at 1920x1080 rather than the mac's retina size on purpose — 2x pixels
+would quadruple the bandwidth for no gain. Alacritty and ghostty are deliberately absent:
+both need working GLX/EGL, and nix-built GL apps on a non-NixOS host hit the nixGL
+problem, so the i3 config uses xterm.
 
 ### Do these by hand first
 

@@ -218,13 +218,29 @@ setup_auth() {
     echo "gh accounts + keys OK."
 }
 
-# Map this machine's arch to the matching flake home configuration.
+# Marker for the VNC remote-desktop role (nix-config/profiles/remote-desktop.nix).
+# A file, not just an env var, so the choice is sticky: once a VM is a desktop, a later
+# plain `./install_nix.sh` won't silently revert it to headless.
+DESKTOP_MARKER="$HOME/.config/dotfiles/desktop"
+
+# Map this machine's arch (and role) to the matching flake home configuration.
+# Opt into the desktop role once with `DESKTOP=1 ./install_nix.sh nix`; remove
+# "$DESKTOP_MARKER" to go back to headless.
 home_target() {
+    local arch role=""
     case "$(uname -m)" in
-        aarch64|arm64) echo "ubuntu-aarch64" ;;
-        x86_64|amd64)  echo "ubuntu-x86_64" ;;
+        aarch64|arm64) arch="ubuntu-aarch64" ;;
+        x86_64|amd64)  arch="ubuntu-x86_64" ;;
         *) echo "ERROR: unsupported architecture '$(uname -m)'" >&2; exit 1 ;;
     esac
+    if [ "${DESKTOP:-0}" = "1" ]; then
+        mkdir -p "$(dirname "$DESKTOP_MARKER")"
+        touch "$DESKTOP_MARKER"
+    fi
+    if [ -e "$DESKTOP_MARKER" ]; then
+        role="-desktop"
+    fi
+    echo "${arch}${role}"
 }
 
 apply_home_manager() {

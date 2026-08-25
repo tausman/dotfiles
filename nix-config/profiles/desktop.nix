@@ -1,5 +1,5 @@
 { ... }:
 {
-  # A machine with a display: the shared bundle plus the GUI extras.
-  imports = [ ./base.nix ./gui.nix ];
+  # The mac: the shared bundle plus the macOS-only extras.
+  imports = [ ./base.nix ./darwin.nix ];
 }

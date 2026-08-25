@@ -1,0 +1,75 @@
+# i3 config for the VNC session on the Ubuntu workspace (nix-config/modules/vnc.nix).
+# Linked live from the dotfiles, so edits here apply on the next `$mod+Shift+r` — no
+# home-manager switch needed.
+
+# Mod1 (Option/Alt), NOT Mod4. A VNC viewer on macOS maps Cmd to Super, but macOS grabs
+# most Cmd combos (Cmd+Tab, Cmd+Q, Cmd+W) before they ever reach the viewer, so a Mod4
+# setup loses half its bindings. Option passes through cleanly.
+set $mod Mod1
+
+# xterm, not alacritty/ghostty: both are GPU-accelerated and need a working GLX/EGL
+# stack. Nix-built GL apps on a non-NixOS host hit the classic libGL mismatch (the
+# nixGL problem), and this VM has no GPU anyway. xterm is pure X11 and just works.
+set $term xterm
+
+font pango:DejaVu Sans Mono 10
+
+# --- launching ---
+bindsym $mod+Return exec $term
+bindsym $mod+d exec dmenu_run
+bindsym $mod+b exec chromium
+bindsym $mod+Shift+q kill
+
+# --- focus (vim keys) ---
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+# --- move (vim keys) ---
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# --- layout ---
+bindsym $mod+v split vertical
+bindsym $mod+s split horizontal
+bindsym $mod+f fullscreen toggle
+bindsym $mod+e layout toggle split
+bindsym $mod+w layout tabbed
+bindsym $mod+Shift+space floating toggle
+
+# --- workspaces ---
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+
+# --- i3 itself ---
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+
+mode "resize" {
+    bindsym h resize shrink width 10 px or 10 ppt
+    bindsym j resize grow height 10 px or 10 ppt
+    bindsym k resize shrink height 10 px or 10 ppt
+    bindsym l resize grow width 10 px or 10 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# Drag floating windows with the mod key held.
+floating_modifier $mod
+
+bar {
+    status_command i3status
+    position top
+}

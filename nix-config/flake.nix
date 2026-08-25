@@ -33,6 +33,11 @@
       # one matching `uname -m`. install_nix.sh selects this automatically.
       "ubuntu-aarch64" = mkHome "aarch64-linux" ./hosts/linux.nix;
       "ubuntu-x86_64"  = mkHome "x86_64-linux"  ./hosts/linux.nix;
+      # Same VM, plus the VNC remote desktop (profiles/remote-desktop.nix). Opt-in per
+      # machine: install_nix.sh picks these only when the desktop marker is set, so a
+      # plain VM stays headless.
+      "ubuntu-aarch64-desktop" = mkHome "aarch64-linux" ./hosts/linux-desktop.nix;
+      "ubuntu-x86_64-desktop"  = mkHome "x86_64-linux"  ./hosts/linux-desktop.nix;
     };
 
     darwinConfigurations.default = nix-darwin.lib.darwinSystem {
