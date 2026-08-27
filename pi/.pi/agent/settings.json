@@ -1,6 +1,6 @@
 {
   "defaultProvider": "ai-gw-baseten",
-  "defaultModel": "baseten/zai-org/GLM-5.2",
+  "defaultModel": "baseten/deepseek-ai/DeepSeek-V4-Flash-0731",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:context-mode",
@@ -16,6 +16,6 @@
     "~/dd/datadog-pi-packages/packages/compaction-continue",
     "~/pi-tausman"
   ],
-  "lastChangelogVersion": "0.84.1",
+  "lastChangelogVersion": "0.84.2",
   "theme": "light"
 }

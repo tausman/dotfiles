@@ -17,7 +17,10 @@ after-startup-command = []
 enable-normalization-flatten-containers = false
 enable-normalization-opposite-orientation-for-nested-containers = false
 
-accordion-padding = 30
+# 0 makes accordion behave like i3's tabbed/stacked: every window in the container
+# fills the workspace and only the focused one is visible. Bump to ~30 if you want a
+# sliver of the neighbours peeking out as a reminder they're there.
+accordion-padding = 0
 default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 
@@ -79,6 +82,9 @@ alt-shift-3 = 'move-node-to-workspace 3'
 alt-shift-4 = 'move-node-to-workspace 4'
 alt-shift-5 = 'move-node-to-workspace 5'
 alt-tab = 'workspace-back-and-forth'
+# toggle between the last two focused windows *within* the workspace — the
+# swap key when two apps are stacked in an accordion
+alt-backtick = 'focus-back-and-forth'
 
 # monitors (no i3 equivalent needed there — the VNC session is single-display)
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
