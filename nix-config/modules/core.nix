@@ -16,6 +16,7 @@
     jq
     ripgrep
     fzf
+    visidata
   ];
 
   # Terminal file manager (the `n` shell function in the dotfiles uses it). Plugins are
