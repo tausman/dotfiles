@@ -9,8 +9,10 @@ The home-manager config is layered **modules → profiles → hosts**:
 - `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad,
   aerospace, vnc, …).
 - `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `darwin.nix`
-  (alacritty + ghostty + kmonad + aerospace), `desktop.nix` (= base + darwin), `headless.nix` (= base),
-  `remote-desktop.nix` (= headless + vnc).
+  (alacritty + ghostty + kmonad + aerospace), `desktop.nix` (= base + darwin), `linux.nix`
+  (Linux-only packages), `headless.nix` (= base + linux), `remote-desktop.nix` (= headless + vnc).
+  `darwin.nix` and `linux.nix` are the two platform layers: anything nixpkgs builds for only
+  one OS goes in one of them instead of an `optionals isLinux`-style guard in `modules/`.
 - `hosts/` — pure identity (username/home) + one profile import: `mac.nix` → `desktop`,
   `linux.nix` → `headless`, `linux-desktop.nix` → `remote-desktop`.
 
@@ -422,8 +424,8 @@ via `modules/core.nix`'s `home.sessionPath`.
 The Linux path is **home-manager only** — no nix-darwin (macOS-only), no kmonad, no
 Homebrew/casks. It shares all the `modules/` tool leaves with the mac via
 `hosts/linux.nix` → `profiles/headless.nix` → `profiles/base.nix`; it just doesn't pull in
-`profiles/darwin.nix`, and the brew `profileExtra` in `modules/zsh.nix` is empty off
-Darwin. Four flake outputs exist — two arches × two roles — identical apart from the
+`profiles/darwin.nix` (it gets `profiles/linux.nix` instead), and the brew `profileExtra` in
+`modules/zsh.nix` is empty off Darwin. Four flake outputs exist — two arches × two roles — identical apart from the
 `system` string and the profile:
 
 - `homeConfigurations."ubuntu-aarch64"` / `."ubuntu-x86_64"` — headless
