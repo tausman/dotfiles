@@ -124,7 +124,7 @@ EOF
 
 # GitHub auth + keys for both accounts (tausman and the tausif-rahman_ddog managed
 # identity). Generates a per-machine keypair for each account, uploads the public
-# halves (auth for both, signing for tausman), records signing trust, and walks
+# halves (auth for both, signing for ddog), records signing trust, and walks
 # through SSO authorization. Runs standalone (`install.sh auth`) so it works the
 # same on the laptop and the workspace. Idempotent — existing keys, uploads, and
 # scopes are detected and skipped. Private keys never leave the machine.
@@ -165,8 +165,8 @@ setup_auth() {
     # live on the laptop), which dies when the laptop sleeps. So each account also
     # gets its own keypair on this machine: github.com authenticates as tausman and
     # ddoghq.github.com as tausif-rahman_ddog (see custom/github-keys.config, which
-    # appends these as fallback identities). tausman's key additionally signs
-    # commits. All helpers below act on the currently-active gh account.
+    # appends these as fallback identities). The ddog key signs all commits,
+    # independently of auth. Helpers act on the currently-active gh account.
     ensure_scope() {  # ensure_scope <scope>
         gh auth status --active 2>&1 | grep -q "'$1'" || {
             echo "  Adding token scope '$1' (opens browser)..."
@@ -174,7 +174,7 @@ setup_auth() {
         }
     }
     key_on_account() {  # key_on_account <pubfile> <api-path> — already uploaded?
-        gh api "$2" --jq '.[].key' 2>/dev/null | grep -qF "$(awk '{print $1, $2}' "$1")"
+        gh api "$2" --paginate --jq '.[].key' 2>/dev/null | grep -F "$(awk '{print $1, $2}' "$1")" >/dev/null
     }
     upload_key() {  # upload_key <pubfile> <authentication|signing>
         local api=/user/keys; [ "$2" = signing ] && api=/user/ssh_signing_keys
@@ -231,19 +231,18 @@ setup_auth() {
         ensure_sso "$1" "$2" "$4" "$5"
     }
 
-    setup_account_key tausman            ~/.ssh/id_ed25519_tausman sign   DataDog        DataDog/team-aaa-internal-tools
-    setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    nosign ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
-
-    # The signing key lives on tausman only: GitHub rejects the same SSH key on a
-    # second account ("key is already in use"), so it can't be shared with the ddog
-    # account. That's fine — every commit is signed with the tausman key, and
-    # GitHub verifies against whichever account holds the commit's verified email
-    # (tausif.rahman@datadoghq.com is on tausman, which also has DataDog org access).
-
-    # Trust the signing key locally so jj/git can verify our own commits.
     mkdir -p ~/.ssh
-    grep -qF "$(cat ~/.ssh/id_ed25519_tausman.pub)" ~/.ssh/allowed_signers 2>/dev/null || \
-        echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519_tausman.pub)" >> ~/.ssh/allowed_signers
+    setup_account_key tausman           ~/.ssh/id_ed25519_tausman nosign DataDog        DataDog/team-aaa-internal-tools
+    setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    sign   ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
+
+    # Use ddog for all commit signing, independently of SSH authentication.
+    # Preserve existing trust entries and ignore public-key comments when matching.
+    local entry
+    entry="tausif.rahman@datadoghq.com $(awk '{print $1, $2}' ~/.ssh/id_ed25519_ddog.pub)"
+    if ! awk -v entry="$entry" '($1 " " $2 " " $3) == entry { found = 1 } END { exit !found }' \
+        ~/.ssh/allowed_signers 2>/dev/null; then
+        printf '%s\n' "$entry" >> ~/.ssh/allowed_signers
+    fi
 
     # Leave the Datadog managed identity active for the rest of the flow.
     gh auth switch -h github.com -u tausif-rahman_ddog
@@ -299,7 +298,7 @@ EOF
     # paths (and under ~/dd). Runs after gh login so auth is already sorted.
     link_ddoghq_repos
 
-    # jj/git sign commits (signing.behavior="own") with ~/.ssh/id_ed25519_tausman.pub,
+    # jj/git sign commits (signing.behavior="own") with ~/.ssh/id_ed25519_ddog.pub,
     # which is generated and uploaded (auth + signing) in the per-account key setup
     # above — so no key needs to be pulled from the forwarded agent anymore.
 

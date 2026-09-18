@@ -7,7 +7,10 @@ email = "tausif.rahman@datadoghq.com"
 [signing]
 behavior = "own"
 backend = "ssh"
-key = "~/.ssh/id_ed25519_tausman.pub"
+key = "~/.ssh/id_ed25519_ddog.pub"
+
+[signing.backends.ssh]
+allowed-signers = "~/.ssh/allowed_signers"
 
 [git]
 push-new-bookmark = true

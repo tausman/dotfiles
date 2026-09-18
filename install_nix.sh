@@ -109,7 +109,7 @@ EOF
 
 # GitHub auth + keys for both accounts (tausman and the tausif-rahman_ddog managed
 # identity). Generates a per-machine keypair for each account, uploads the public halves
-# (auth for both, signing for tausman), records signing trust, and walks through SSO. Ported
+# (auth for both, signing for ddog), records signing trust, and walks through SSO. Ported
 # from install.sh; OS-agnostic (gh + ssh-keygen). Idempotent — existing keys/uploads/scopes
 # are detected and skipped. Private keys never leave the machine.
 setup_auth() {
@@ -151,7 +151,7 @@ setup_auth() {
         }
     }
     key_on_account() {  # key_on_account <pubfile> <api-path> — already uploaded?
-        gh api "$2" --jq '.[].key' 2>/dev/null | grep -qF "$(awk '{print $1, $2}' "$1")"
+        gh api "$2" --paginate --jq '.[].key' 2>/dev/null | grep -F "$(awk '{print $1, $2}' "$1")" >/dev/null
     }
     upload_key() {  # upload_key <pubfile> <authentication|signing>
         local api=/user/keys; [ "$2" = signing ] && api=/user/ssh_signing_keys
@@ -205,13 +205,18 @@ setup_auth() {
         ensure_sso "$1" "$2" "$4" "$5"
     }
 
-    setup_account_key tausman            ~/.ssh/id_ed25519_tausman sign   DataDog        DataDog/team-aaa-internal-tools
-    setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    nosign ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
-
-    # Trust the signing key locally so jj/git can verify our own commits.
     mkdir -p ~/.ssh
-    grep -qF "$(cat ~/.ssh/id_ed25519_tausman.pub)" ~/.ssh/allowed_signers 2>/dev/null || \
-        echo "tausif.rahman@datadoghq.com $(cat ~/.ssh/id_ed25519_tausman.pub)" >> ~/.ssh/allowed_signers
+    setup_account_key tausman           ~/.ssh/id_ed25519_tausman nosign DataDog        DataDog/team-aaa-internal-tools
+    setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    sign   ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
+
+    # Use ddog for all commit signing, independently of SSH authentication.
+    # Preserve existing trust entries and ignore public-key comments when matching.
+    local entry
+    entry="tausif.rahman@datadoghq.com $(awk '{print $1, $2}' ~/.ssh/id_ed25519_ddog.pub)"
+    if ! awk -v entry="$entry" '($1 " " $2 " " $3) == entry { found = 1 } END { exit !found }' \
+        ~/.ssh/allowed_signers 2>/dev/null; then
+        printf '%s\n' "$entry" >> ~/.ssh/allowed_signers
+    fi
 
     # Leave the Datadog managed identity active.
     gh auth switch -h github.com -u tausif-rahman_ddog

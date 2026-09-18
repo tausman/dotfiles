@@ -10,6 +10,13 @@
 - Use vim keybindings conventions when relevant
 - When drafting PR review comment responses, always append the following on a new line at the bottom: `🤖 Assisted with AI`
 
+## Workflow Defaults
+- Default to direct investigation and implementation. Use a brief in-chat plan when helpful.
+- Do not create research, plan, or progress documents unless requested.
+- Use `research-codebase`, `create-plan`, `implement-plan`, and `iterate-plan` only when explicitly requested or as part of another explicitly requested workflow. These defaults override their automatic activation triggers.
+- Routine discoveries, test failures, small corrections, and PR feedback do not require a formal planning workflow; investigate, fix, and verify directly.
+- Suggest formal planning when scope or risk warrants it, but get agreement before creating planning documents.
+
 ## Dotfiles
 - Located at ~/dotfiles
 - Aliases are in ~/.aliases.zsh (symlinked from ~/dotfiles/aliases.zsh)

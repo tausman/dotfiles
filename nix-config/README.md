@@ -271,7 +271,7 @@ git clone https://github.com/tausman/dotfiles.git ~/dotfiles
 
 `install.sh auth` is the one and only auth step. It logs in **both** accounts through
 `gh` (`tausman` and the Datadog-managed `tausif-rahman_ddog`), generates/uploads
-per-account SSH keys, sets up commit **signing** on `tausman`, and walks you through
+per-account SSH keys, sets up commit **signing** on `tausif-rahman_ddog`, and walks you through
 SSO authorization.
 
 ```sh
@@ -280,8 +280,13 @@ cd ~/dotfiles
 ```
 
 Keys created:
-- `~/.ssh/id_ed25519_tausman` — auth **and** commit signing (has DataDog org access)
-- `~/.ssh/id_ed25519_ddog` — auth for the managed account
+- `~/.ssh/id_ed25519_tausman` — auth for the personal / legacy DataDog account
+- `~/.ssh/id_ed25519_ddog` — auth for the managed account **and signing for all commits**
+
+Commit signing is independent of which SSH key authenticates a push. Git and jj
+always sign with the ddog key; only its public half is uploaded as a signing key to
+`tausif-rahman_ddog`. The Nix installer supports the same setup via `./install_nix.sh auth`.
+Re-run that command on existing machines and approve `admin:ssh_signing_key` if prompted.
 
 Complete the browser SSO authorization for the `tausman` key against the `DataDog` org.
 
@@ -320,7 +325,7 @@ curl -fsSL https://binaries.ddbuild.io/devtools/apps/git-config-tool/install.sh 
 git-config-tool setup --no-signing --no-1password
 ```
 
-`--no-signing` because commit signing is already handled by the `tausman` key from
+`--no-signing` because commit signing is already handled by the `ddog` key from
 step 5; `--no-1password` skips the 1Password integration. Needs Datadog network/VPN access.
 
 ### 8. Install Homebrew

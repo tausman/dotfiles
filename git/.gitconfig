@@ -8,7 +8,6 @@
 [user]
 	email = tausif.rahman@datadoghq.com
 	name = Tausif Rahman
-	signingkey = ~/.ssh/id_ed25519_tausman.pub
 [pull]
 	rebase = true
 [push]
@@ -26,8 +25,6 @@
 [url "git@github.com:"]
 	insteadOf = https://github.com/
 	insteadOf = git://github.com/
-[commit]
-	gpgsign = true
 [status]
 	showUntrackedFiles = all
 [feature]
@@ -36,10 +33,6 @@
 	repo = /Users/tausif.rahman/go/src/github.com/DataDog/dd-source
 [index]
 	skipHash = true
-[gpg]
-	format = ssh
-[gpg "ssh"]
-	allowedSignersFile = ~/.ssh/allowed_signers
 [init]
 	templateDir = ~/.git-template
 [fetch]
@@ -61,3 +54,13 @@
 	# Linux workspace; git silently ignores whichever path doesn't exist.
 	path = /Users/tausif.rahman/.config/datadog/git/config
 	path = /home/bits/.config/datadog/git/config
+
+# One local signing key for every repo; override the managed include above.
+[user]
+	signingkey = ~/.ssh/id_ed25519_ddog.pub
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.ssh/allowed_signers
+[commit]
+	gpgsign = true
