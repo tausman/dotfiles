@@ -1,6 +1,6 @@
 {
-  "defaultProvider": "ai-gw-baseten",
-  "defaultModel": "baseten/deepseek-ai/DeepSeek-V4-Flash-0731",
+  "defaultProvider": "ai-gw-openai",
+  "defaultModel": "openai/gpt-6-astra",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:context-mode",
