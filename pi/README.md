@@ -6,13 +6,14 @@ files, linked into place by that same module.
 
 Datadog references: [Pi](https://datadoghq.atlassian.net/wiki/spaces/AIDEVX/pages/6970966751)
 and [Pi Golden Config](https://datadoghq.atlassian.net/wiki/spaces/AIDEVX/pages/7045349995).
-`.pi/agent/settings.json` here is the golden `packages` list plus `~/pi-tausman`.
+`.pi/agent/settings.json` here is the golden `packages` list plus `~/pi-tausman`,
+with a separate `skills` entry for the shared Credential Management on-call skill.
 
 ## Tracked files
 
 | Repo path | Deployed to | Notes |
 | --- | --- | --- |
-| `.pi/agent/settings.json` | `~/.pi/agent/settings.json` | Packages, default model, thinking level. |
+| `.pi/agent/settings.json` | `~/.pi/agent/settings.json` | Packages, shared skill paths, default model, thinking level. |
 | `.pi/agent/mcp.json` | `~/.pi/agent/mcp.json` | All MCP servers. |
 | `claude/.claude/CLAUDE.md` | `~/.pi/agent/AGENTS.md` | Global instructions, shared with Claude. Lives in `claude/`, not here. |
 
@@ -118,10 +119,40 @@ Things in `claude/.claude/settings.json` that intentionally did not carry over:
 
 ## Skills and agents
 
-Both come from the **`pi-tausman`** package at `~/pi-tausman`, listed in `packages`. It
-holds pi-adapted copies of the `~/claude-plugins/tausman` skills and agents: 10 skills as
-`/skill:<name>`, and 4 subagents dispatchable as `tausman.<name>` through `pi-subagents`.
-See that repo's README for what differs from the Claude originals and why.
+Personal skills and agents come from the **`pi-tausman`** package at `~/pi-tausman`,
+listed in `packages`. It holds pi-adapted copies of the `~/claude-plugins/tausman` skills
+and agents: 10 skills as `/skill:<name>`, and 4 subagents dispatchable as
+`tausman.<name>` through `pi-subagents`. See that repo's README for what differs from
+the Claude originals and why.
+
+### Shared on-call skill
+
+The top-level `skills` array also loads
+`~/dd/team-aaa-internal-tools/credential-management/skills/oncall` directly from a
+retained checkout of [ddoghq/team-aaa-internal-tools](https://github.com/ddoghq/team-aaa-internal-tools).
+This adds `/skill:oncall` without importing the whole team package's other,
+potentially Claude-specific skills or copying team content into this repo.
+Keep the full skill directory, including `references/`, in that checkout.
+
+After changing the registration or updating the checkout, run `/reload` or restart Pi.
+Verify that `/skill:oncall` loads the shared file and includes `catch-up`. A read-only
+smoke test is:
+
+```text
+/skill:oncall start <existing-weekly-report-url>
+/skill:oncall recap
+```
+
+The skill uses the existing authorized Datadog HQ, Slack, Atlassian, and GitHub
+connections; loading it does not configure tools or grant permissions. Notebook
+changes require a preview and explicit approval. See the
+[team setup guide](https://datadoghq.atlassian.net/wiki/spaces/AAAAUTHN/pages/7240515945).
+
+This registration follows live checkout contents, including branch switches and
+uncommitted edits. Update the checkout explicitly with the jj workflow; `pi update`
+does not update local-path skills. Keep skill development in a separate worktree.
+
+### Claude plugin bridge
 
 **`claude-marketplace` is deliberately not installed.** That package bridges Claude
 plugins into pi automatically — reading `~/.claude/settings.json` and exposing every
@@ -160,5 +191,19 @@ repo.
 
 The five `~/dd/datadog-pi-packages/...` entries need that repo cloned at exactly that path
 (`install_nix.sh` does it); the npm entries auto-install on first startup.
+
+The shared on-call skill separately requires a current checkout of
+`ddoghq/team-aaa-internal-tools` at `~/dd/team-aaa-internal-tools`.
+`install_nix.sh` (`setup_repos`) provisions it in full and fast modes, but not in
+nix-only mode. To clone it separately (requires the `ddoghq.github.com` SSH alias
+from `git-config-tool setup`), use:
+
+```sh
+jj git clone --colocate git@ddoghq.github.com:ddoghq/team-aaa-internal-tools.git ~/dd/team-aaa-internal-tools
+```
+
+If the directory already exists, inspect it and update it without overwriting local
+work; older checkouts may still point to `DataDog/team-aaa-internal-tools` and lack the
+skill. No additional `pi install` is needed because `settings.json` registers its path.
 
 Authenticate MCP servers on first use inside pi: `/mcp`, select the server, `Ctrl+A`.

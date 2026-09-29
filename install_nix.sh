@@ -284,7 +284,7 @@ setup_repos() {
     echo "Configuring DD repos..."
 
     [ -d "$HOME/dd/team-aaa-internal-tools/.git" ] || \
-        git clone git@github.com:DataDog/team-aaa-internal-tools.git "$HOME/dd/team-aaa-internal-tools"
+        git clone git@ddoghq.github.com:ddoghq/team-aaa-internal-tools.git "$HOME/dd/team-aaa-internal-tools"
     # Expose the acepg postgres-access helper on PATH.
     mkdir -p "$HOME/.local/bin"
     ln -sf "$HOME/dd/team-aaa-internal-tools/postgres-access-tool/acepg" "$HOME/.local/bin/acepg"

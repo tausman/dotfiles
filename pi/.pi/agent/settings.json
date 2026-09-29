@@ -16,6 +16,9 @@
     "~/dd/datadog-pi-packages/packages/compaction-continue",
     "~/pi-tausman"
   ],
+  "skills": [
+    "~/dd/team-aaa-internal-tools/credential-management/skills/oncall"
+  ],
   "lastChangelogVersion": "0.84.2",
   "theme": "light",
   "hideThinkingBlock": true
