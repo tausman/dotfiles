@@ -14,6 +14,7 @@
   home.packages = with pkgs; [
     curl
     jq
+    kubectl
     ripgrep
     fzf
     visidata

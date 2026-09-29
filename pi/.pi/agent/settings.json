@@ -1,7 +1,7 @@
 {
   "defaultProvider": "ai-gw-openai",
   "defaultModel": "openai/gpt-6-astra",
-  "defaultThinkingLevel": "high",
+  "defaultThinkingLevel": "medium",
   "packages": [
     "npm:context-mode",
     "npm:pi-subagents",
@@ -17,5 +17,6 @@
     "~/pi-tausman"
   ],
   "lastChangelogVersion": "0.84.2",
-  "theme": "light"
+  "theme": "light",
+  "hideThinkingBlock": true
 }
