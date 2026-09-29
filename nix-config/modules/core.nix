@@ -15,6 +15,7 @@
     curl
     jq
     kubectl
+    datadog-pup # Datadog CLI (provides `pup`; pkgs.pup is an unrelated HTML parser).
     ripgrep
     fzf
     visidata

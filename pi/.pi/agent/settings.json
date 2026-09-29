@@ -1,7 +1,7 @@
 {
   "defaultProvider": "ai-gw-openai",
   "defaultModel": "openai/gpt-6-astra",
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "high",
   "packages": [
     "npm:context-mode",
     "npm:pi-subagents",

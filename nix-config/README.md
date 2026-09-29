@@ -6,8 +6,8 @@ Nix-based machine setup. On macOS this is driven by [nix-darwin](https://github.
 
 The home-manager config is layered **modules → profiles → hosts**:
 
-- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, dev, alacritty, kmonad,
-  aerospace, vnc, …).
+- `modules/` — one leaf per tool (git, zsh, tmux, neovim, jj, claude, codex, dev, alacritty,
+  kmonad, aerospace, vnc, …).
 - `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `darwin.nix`
   (alacritty + ghostty + kmonad + aerospace), `desktop.nix` (= base + darwin), `linux.nix`
   (Linux-only packages), `headless.nix` (= base + linux), `remote-desktop.nix` (= headless + vnc).
