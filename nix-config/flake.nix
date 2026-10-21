@@ -13,9 +13,14 @@
       url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixgl = {
+      url = "github:nix-community/nixGL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, nix-darwin, ... }:
+  outputs = { nixpkgs, home-manager, nix-darwin, nixgl, ... }:
   let
     # Build a home-manager configuration for a given system + host entry module. Each
     # host file (./hosts/*.nix) sets its identity and imports the shared modules under
@@ -24,6 +29,12 @@
     mkHome = system: hostModule: home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.${system};
       modules = [ hostModule ];
+    };
+
+    mkHomePersonal = system: hostModule: home-manager.lib.homeManagerConfiguration {
+      pkgs = nixpkgs.legacyPackages.${system};
+      modules = [ hostModule ];
+      extraSpecialArgs = { inherit nixgl; };
     };
   in {
     homeConfigurations = {
@@ -38,6 +49,8 @@
       # plain VM stays headless.
       "ubuntu-aarch64-desktop" = mkHome "aarch64-linux" ./hosts/linux-desktop.nix;
       "ubuntu-x86_64-desktop"  = mkHome "x86_64-linux"  ./hosts/linux-desktop.nix;
+      # personal install
+      "ubuntu-x86_64-desktop-personal"  = mkHomePersonal "x86_64-linux"  ./hosts/linux-desktop-personal.nix;
     };
 
     darwinConfigurations.default = nix-darwin.lib.darwinSystem {

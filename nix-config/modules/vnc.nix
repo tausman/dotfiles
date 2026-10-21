@@ -1,4 +1,4 @@
-{ pkgs, liveLink, ... }:
+{ pkgs, nixgl, liveLink, ... }:
 let
   # Chromium with two flags baked in:
   #   --password-store=basic  under a bare WM there's no gnome-keyring / dbus secret
@@ -189,29 +189,34 @@ in
   #
   # The session survives disconnects, tmux-style; reconnecting rejoins it.
 
-  home.packages = with pkgs; [
-    tigervnc # Xvnc + vncpasswd/vncconfig
-    i3
-    i3status
-    dmenu
-    xterm # see the terminal comment in the i3 config
-    chromium
+  home.packages = [
+    # Install nixgl for graphical apps installed with nix
+    nixgl.packages.${pkgs.system}.default
+
+    # Install all packages
+    pkgs.tigervnc # Xvnc + vncpasswd/vncconfig
+    pkgs.i3
+    pkgs.i3status
+    pkgs.dmenu
+    pkgs.xterm # see the terminal comment in the i3 config
+    pkgs.ghostty
+    pkgs.firefox
     vnc-start
     vnc-stop
 
     # X utilities worth having inside the session.
-    xclip # clipboard from the shell
-    xrandr # inspect/change the session resolution
-    xdpyinfo # confirm the X server is actually up
-    xkbcomp # Xvnc needs it for the keymap; also useful by hand
+    pkgs.xclip # clipboard from the shell
+    pkgs.xrandr # inspect/change the session resolution
+    pkgs.xdpyinfo # confirm the X server is actually up
+    pkgs.xkbcomp # Xvnc needs it for the keymap; also useful by hand
 
     # Fonts. Without these, and without fontconfig below, every web page and UI label
     # renders as tofu boxes: nix packages don't see Ubuntu's system font paths.
-    dejavu_fonts
-    liberation_ttf # metric-compatible Arial/Times/Courier substitutes for the web
-    noto-fonts
-    noto-fonts-color-emoji
-    nerd-fonts.hack # same font the mac's terminals use
+    pkgs.dejavu_fonts
+    pkgs.liberation_ttf # metric-compatible Arial/Times/Courier substitutes for the web
+    pkgs.noto-fonts
+    pkgs.noto-fonts-color-emoji
+    pkgs.nerd-fonts.hack # same font the mac's terminals use
   ];
 
   # Generates ~/.config/fontconfig pointing at the nix profile's fonts. Required on a
