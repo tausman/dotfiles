@@ -191,7 +191,7 @@ in
 
   home.packages = [
     # Install nixgl for graphical apps installed with nix
-    nixgl.packages.${pkgs.system}.default
+    nixgl.packages.${pkgs.system}.nixGLIntel
 
     # Install all packages
     pkgs.tigervnc # Xvnc + vncpasswd/vncconfig

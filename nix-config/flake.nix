@@ -29,6 +29,7 @@
     mkHome = system: hostModule: home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.${system};
       modules = [ hostModule ];
+      extraSpecialArgs = { inherit nixgl; };
     };
 
     mkHomePersonal = system: hostModule: home-manager.lib.homeManagerConfiguration {
