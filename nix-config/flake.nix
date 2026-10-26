@@ -20,11 +20,11 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, nix-darwin, nixgl, ... }:
+  outputs = { self, nixpkgs, home-manager, nix-darwin, nixgl, ... }:
   let
     # Build a home-manager configuration for a given system + host entry module. Each
-    # host file (./hosts/*.nix) sets its identity and imports the shared modules under
-    # ./home; mac additionally imports the GUI/kmonad modules. The target NAME below is
+    # host file (./hosts/*.nix) sets its identity and imports a profile of shared
+    # modules; mac additionally imports the GUI/kmonad modules. The target NAME below is
     # what selects the host file at switch time (see README).
     mkHome = system: hostModule: home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.${system};
@@ -53,6 +53,34 @@
       # personal install
       "ubuntu-x86_64-desktop-personal"  = mkHomePersonal "x86_64-linux"  ./hosts/linux-desktop-personal.nix;
     };
+
+    # Existing personal NixOS machine: one rebuild applies the OS and t's home.
+    # The flake target is `personal`; the machine keeps its existing hostname `nixos`.
+    nixosConfigurations.personal = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./nixos/personal/configuration.nix
+        home-manager.nixosModules.home-manager
+        {
+          # Retain HM's package set: modules/claude.nix owns its unfree predicate.
+          # Enabling useGlobalPkgs would ignore that HM-level package policy.
+          home-manager.useGlobalPkgs = false;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "before-home-manager";
+          home-manager.users.t = import ./hosts/nixos-personal.nix;
+        }
+      ];
+    };
+
+    # Evaluate the Linux system on any supported development host, without building
+    # its Linux closure. The check itself is a tiny native derivation.
+    checks = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ]
+      (system: {
+        personal = import ./tests/personal.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          flake = self;
+        };
+      });
 
     darwinConfigurations.default = nix-darwin.lib.darwinSystem {
       system = "aarch64-darwin";

@@ -1,8 +1,9 @@
 # nix-config
 
-Nix-based machine setup. On macOS this is driven by [nix-darwin](https://github.com/nix-darwin/nix-darwin)
-(system-level: `darwin.nix`) and [home-manager](https://github.com/nix-community/home-manager)
-(user-level), wired together in `flake.nix`.
+Nix-based machine setup for macOS, Ubuntu workspaces, and the personal NixOS machine.
+`flake.nix` exposes separate Darwin system/Home Manager targets, Ubuntu Home Manager
+targets, and a NixOS target with integrated [Home Manager](https://github.com/nix-community/home-manager).
+macOS system configuration is managed by [nix-darwin](https://github.com/nix-darwin/nix-darwin).
 
 The home-manager config is layered **modules → profiles → hosts**:
 
@@ -10,16 +11,21 @@ The home-manager config is layered **modules → profiles → hosts**:
   kmonad, aerospace, vnc, …).
 - `profiles/` — bundles: `base.nix` (shared leaves + the `liveLink` helper), `darwin.nix`
   (alacritty + ghostty + kmonad + aerospace), `desktop.nix` (= base + darwin), `linux.nix`
-  (Linux-only packages), `headless.nix` (= base + linux), `remote-desktop.nix` (= headless + vnc).
+  (Linux-only packages), `headless.nix` (= base + linux), `linux-desktop.nix`
+  (= headless + shared desktop applications/settings), and `remote-desktop.nix`
+  (= linux-desktop + VNC server/compatibility add-on).
   `darwin.nix` and `linux.nix` are the two platform layers: anything nixpkgs builds for only
   one OS goes in one of them instead of an `optionals isLinux`-style guard in `modules/`.
 - `hosts/` — pure identity (username/home) + one profile import: `mac.nix` → `desktop`,
-  `linux.nix` → `headless`, `linux-desktop.nix` → `remote-desktop`.
+  `linux.nix` → `headless`, `linux-desktop.nix` → `remote-desktop`,
+  `nixos-personal.nix` → `linux-desktop`.
+- `nixos/<machine>/` — NixOS **system** modules and generated hardware configuration.
+  These are separate from the Home Manager modules above.
 
 `darwin.nix` was `gui.nix`. Nothing in it was ever about *having a display* — alacritty and
 ghostty are installed as apps by Homebrew and those modules only link configs, and kmonad's
-launchd daemon is macOS-only — so it's named for the axis it actually tracks. The Linux
-remote desktop shares none of it.
+launchd daemon is macOS-only — so it's named for the axis it actually tracks. Linux
+reuses config-only leaves such as `alacritty.nix`, not the Darwin-specific bundle.
 
 The flake maps each target name to a host file: `default` → `hosts/mac.nix`,
 `ubuntu-{aarch64,x86_64}` → `hosts/linux.nix`, `ubuntu-{aarch64,x86_64}-desktop` →
@@ -33,7 +39,7 @@ by `../install_nix.sh` — see [Ubuntu / Linux (headless VM)](#ubuntu--linux-hea
 at the bottom. The rest of this doc (Parts 1–3, kmonad, etc.) is the macOS flow.
 
 - Flake lives in: `/Users/tausif.rahman/dotfiles/nix-config`
-- Both outputs use the `default` target: `darwinConfigurations.default`, `homeConfigurations.default`
+- Both **macOS** outputs use the `default` target: `darwinConfigurations.default`, `homeConfigurations.default`
 
 **The flow:** do everything you install/build up front (**Part 1**), then apply the
 config with two switches (**Part 2**), then a small cleanup (**Part 3**). After Part 2,
@@ -44,7 +50,126 @@ is live.
 
 ---
 
-## Part 1 — Prerequisites (install/build everything first)
+## NixOS — personal machine
+
+**Target: `nixosConfigurations.personal`.** One rebuild applies the operating system
+and the shared dotfiles/packages for user `t`. The flake target name is `personal`;
+the machine's existing hostname remains `nixos`.
+
+```text
+flake.nix → nixosConfigurations.personal
+  ├── nixos/personal/configuration.nix          # boot, networking, users, LightDM/i3
+  │   └── hardware-configuration.nix            # this machine's disks and hardware
+  └── hosts/nixos-personal.nix                  # Home Manager: t, /home/t
+      └── profiles/linux-desktop.nix           # shared Linux CLI tools + desktop apps/config
+```
+
+### Apply on the existing NixOS machine
+
+This is **not** a disk installer and does not convert Ubuntu into NixOS. It preserves
+the imported machine's encrypted root/EFI mounts, latest-kernel selection, Intel NPU,
+and `system.stateVersion = "26.05"`. The flake's existing lockfile supplies the Nixpkgs
+version; `stateVersion` is a compatibility setting, not a release selector.
+
+1. Log in as `t` and put the **whole repository** at **`/home/t/dotfiles`**. The shared
+   `liveLink` helper points there; moving/deleting the checkout breaks those live config
+   links. Do not copy only `nix-config/` or force a `path:.../nix-config` flake reference:
+   the shared Git module also reads the repository-level `git/.git-template/config`.
+   Use the normal checkout paths shown below so Nix includes the full Git source.
+2. Back up `/etc/nixos` and any existing home config you care about. Home Manager uses
+   `.before-home-manager` backups for ordinary unmanaged-file conflicts, but some existing
+   shared agent modules explicitly force their own files. If a backup already exists,
+   resolve that collision rather than deleting it blindly.
+3. Build first, then apply:
+
+   ```sh
+   cd ~/dotfiles
+   sudo nixos-rebuild build --flake "$HOME/dotfiles/nix-config#personal"
+   sudo nixos-rebuild switch --flake "$HOME/dotfiles/nix-config#personal"
+   ```
+
+   `nixos-rebuild` enables the flake features for its own invocation; the new system
+   configuration also enables `nix-command` and `flakes` persistently.
+4. Log out and back in to pick up the Zsh login shell, user-package PATH, and i3 config.
+   Reboot when ready to load the configured kernel/boot changes.
+
+Subsequent changes use the same `switch` command. Do **not** additionally run a standalone
+`home-manager switch` for this user: the system rebuild owns that activation. Do not run
+`install_nix.sh` or `install_nix_personal.sh` here; those are Ubuntu bootstrap paths and
+are unnecessary on NixOS. Existing account credentials are not changed by this config.
+
+Home Manager deliberately retains its own package set (`useGlobalPkgs = false`), so
+`modules/claude.nix`'s unfree-package predicate continues to apply. User packages are
+installed through NixOS (`useUserPackages = true`). The shared base still includes work
+Git/SSH/agent settings; this target does not create a separate personal/work identity or
+run the Datadog repository/auth bootstrap.
+
+Neovim is declared once, in `modules/neovim.nix`, together with its user configuration.
+`useUserPackages` exposes that Home Manager environment through NixOS; it is not a
+second Neovim declaration. There is no separate NixOS system-package entry for it.
+
+### Native desktop
+
+NixOS owns LightDM/Xorg/i3 and supplies the fallback/UI fonts (including DejaVu and
+emoji). Both native and Ubuntu/VNC desktops use the same `linux-desktop.nix` bundle:
+xterm, Alacritty, Ghostty, Firefox, Chromium, i3 utilities, and shared CLI tools.
+The NixOS i3 service starts the session; its optional user utilities come from Home
+Manager rather than a second system package list. Native NixOS needs no VNC/nixGL add-on.
+
+`modules/alacritty.nix` only links settings/themes and supplies Hack Nerd Font; it does
+**not** install the application. The Linux profile installs the Alacritty binary once;
+on macOS Homebrew installs it. There is no duplicate Alacritty installation.
+
+Native and VNC sessions use **one complete i3 file**, `config/.config/i3/config`,
+live-linked by `modules/i3.nix`. There are no include fragments, generated entry points,
+or terminal overrides. xterm is the default everywhere; Chromium is the browser shortcut.
+Alacritty, Ghostty, and Firefox remain available from the launcher. Apply the relevant
+Home Manager/NixOS target once after this layout change, then restart i3.
+
+- `Alt+Enter`: xterm; `Alt+b`: Chromium; `Alt+d`: launcher.
+- `Alt+h/j/k/l`: Vim-style focus; add Shift to move a window.
+- `Alt+1..5`: workspaces; `Alt+Shift+r`: reload via i3 restart.
+
+### A different NixOS machine
+
+**Do not apply `#personal` unchanged to another machine:** its hardware file contains
+specific encrypted-disk and EFI identifiers. Create another `nixos/<machine>/` entry
+using that machine's generated hardware/boot configuration, declare its matching user
+and home entry, and add another `nixosConfigurations` target. Preserve each machine's
+original `system.stateVersion` independently of Home Manager's `home.stateVersion`.
+
+### Validation without activation
+
+These extra tests are **opt-in**: `nixos-rebuild build` and `switch` select the system
+output, not `checks`, so they do not run this regression suite. Normal NixOS module
+assertions still apply. `nix flake check` evaluates the checks and builds them for the
+current platform; `--no-build` only evaluates them, including the assertions in this suite.
+Nix can reuse an already-built check result when its inputs have not changed.
+
+From the repo root, evaluate all regression checks and the full NixOS system derivation:
+
+```sh
+nix flake check --no-build --all-systems --no-write-lock-file ./nix-config
+nix eval --raw --no-write-lock-file \
+  ./nix-config#nixosConfigurations.personal.config.system.build.toplevel.drvPath
+```
+
+Add `--offline` when the locked inputs are already cached. The check covers machine
+settings, integrated Home Manager, the common desktop app list and single i3 config,
+VNC-only compatibility flags, package/font ownership, and preservation of all existing
+Darwin/Ubuntu target names. It also runs as a tiny native check on an ARM Mac:
+
+```sh
+nix build --no-link --no-write-lock-file ./nix-config#checks.aarch64-darwin.personal
+```
+
+That check only evaluates the Linux system; it does not build or activate its Linux
+closure. A real system build, boot/decryption, login, and desktop check must run on the
+target NixOS machine (or an appropriate Linux builder for the build).
+
+---
+
+## Part 1 — macOS prerequisites (install/build everything first)
 
 ### 1. Apple Command Line Tools
 
@@ -345,7 +470,7 @@ sudo ~/.local/bin/kmonad ~/.config/kmonad.kbd
 - Deliberately **not** nix-darwin's `services.aerospace`, which renders the TOML into
   `/nix/store` — every keybinding tweak would then need a `darwin-rebuild`. With the live
   symlink, edit the file and hit `alt-shift-c` (`reload-config`).
-- The keymap is a port of `config/.config/i3/config` (the Linux VNC session): `alt` as the
+- The keymap is a port of `config/.config/i3/config` (shared Linux/VNC config): `alt` as the
   modifier, vim keys for focus/move, workspaces 1–5, `alt-r` for resize mode. Keeping the
   two in sync means the muscle memory transfers.
 - `system.defaults.dock.mru-spaces = false` is required — macOS reordering Spaces by
@@ -436,13 +561,24 @@ User is `bits`, home `/home/bits`.
 
 ### Remote desktop (VNC)
 
-`profiles/remote-desktop.nix` = `headless.nix` + `modules/vnc.nix`. It layers on top rather
-than replacing, so a VM with no desktop stays a valid role and `headless` is still
-importable on its own.
+`profiles/remote-desktop.nix` = `linux-desktop.nix` + `modules/vnc.nix`.
+`linux-desktop.nix` already includes `headless.nix`, so the layers are:
 
-`modules/vnc.nix` installs TigerVNC, i3, chromium, and fonts, provides `vnc-start` /
-`vnc-stop`, and liveLinks `~/.config/i3/config` from `config/.config/i3/config`. Xvnc is a
-*virtual* X server — no display hardware — which is exactly why it suits a headless box.
+```text
+headless → shared CLI tools
+linux-desktop → headless + common desktop apps and one i3 config
+remote-desktop → linux-desktop + VNC server/compatibility add-on
+```
+
+`modules/vnc.nix` adds TigerVNC, the virtual i3 session, `vnc-start` / `vnc-stop`, and
+Ubuntu-specific graphics/font support. It only adds workspace-safe flags to the shared
+Chromium declaration; it does not install a second browser. The general apps and i3
+config live in the common desktop profile, not in this add-on.
+
+The existing `ubuntu-<arch>-desktop` targets still select this VNC role. `DESKTOP=1` and
+its persistent marker in `install_nix.sh` are unchanged; no new target names or installer
+flags are needed. Plain `ubuntu-<arch>` targets remain headless. Xvnc is a *virtual* X
+server — no display hardware — which is why it suits a headless box.
 
 `vnc-start` drives `Xvnc` directly rather than going through TigerVNC's `vncserver`
 wrapper. As of 1.16 that wrapper takes a display and nothing else (options come from a
@@ -494,9 +630,9 @@ TigerVNC Viewer handles `None` and needs none of this.
 
 Notes: no GPU, so rendering is software (fine for DOM/CSS, sluggish for WebGL and video).
 The session runs at 1920x1080 rather than the mac's retina size on purpose — 2x pixels
-would quadruple the bandwidth for no gain. Alacritty and ghostty are deliberately absent:
-both need working GLX/EGL, and nix-built GL apps on a non-NixOS host hit the nixGL
-problem, so the i3 config uses xterm.
+would quadruple the bandwidth for no gain. The shared i3 default is xterm, which works
+without GLX/EGL on both native and virtual displays. Alacritty/Ghostty remain installed,
+but their GPU requirements can prevent them from running in the VNC session.
 
 ### Do these by hand first
 

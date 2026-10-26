@@ -1,35 +1,5 @@
-{ pkgs, nixgl, liveLink, ... }:
+{ pkgs, nixgl, ... }:
 let
-  # Chromium with two flags baked in:
-  #   --password-store=basic  under a bare WM there's no gnome-keyring / dbus secret
-  #                           service, so the default `detect` picks the keyring, fails
-  #                           to reach it, and prompts on every launch.
-  #   --disable-gpu           this VM has no GPU and Xvnc exposes no GLX, so chromium
-  #                           starts a GPU process that always dies ("GLX is not
-  #                           present") before falling back to software rendering. This
-  #                           skips the doomed process; rendering is unaffected.
-  #   --disable-dev-shm-usage the workspace is a Docker container, so /dev/shm is the
-  #                           64MB default. Chromium passes font data and IPC through
-  #                           shared memory there; once it fills, the font data service
-  #                           hits `Check failed: No space left on device` and the FATAL
-  #                           raises SIGTRAP, which surfaces as "Can't open this page".
-  #                           One tab took /dev/shm from 16MB to 31MB, so a handful of
-  #                           tabs exhausts it. This flag moves that allocation to /tmp.
-  #                           Verified: with it, /dev/shm usage stays flat and chromium
-  #                           holds no /dev/shm descriptors. Enlarging /dev/shm would
-  #                           also work (`mount -o remount,size=2G /dev/shm`) but needs
-  #                           root and is lost whenever the container is recreated.
-  # The override rebuilds only the wrapper script, not chromium itself, so it's ~free.
-  #
-  # chromium rather than google-chrome for two reasons: it's free-licensed (google-chrome
-  # is unfree, and the flake passes `pkgs` in directly, so home-manager's
-  # `nixpkgs.config` is inert and allowUnfree would have to be threaded through
-  # flake.nix), and it's prebuilt in the binary cache for aarch64. To switch, set
-  # config.allowUnfree in flake.nix's mkHome and change this to pkgs.google-chrome.
-  chromium = pkgs.chromium.override {
-    commandLineArgs = "--password-store=basic --disable-gpu --disable-dev-shm-usage";
-  };
-
   tigervnc = pkgs.tigervnc;
 
   # Where logs and the pidfile go. Not ~/.vnc: TigerVNC 1.16 treats that as a legacy
@@ -179,9 +149,8 @@ let
   '';
 in
 {
-  # A remote desktop for the headless VM: a virtual X server plus a minimal WM, reached
-  # from the mac over an SSH tunnel. Imported only by profiles/remote-desktop.nix, so a
-  # plain `headless` host is unaffected.
+  # VNC-specific add-on to the shared Linux desktop, reached over an SSH tunnel.
+  # Imported only by profiles/remote-desktop.nix; native and headless hosts are unaffected.
   #
   #   vnc-start        bring up :1 (pass :2 etc. for another)
   #   vnc-stop         tear it down
@@ -189,41 +158,29 @@ in
   #
   # The session survives disconnects, tmux-style; reconnecting rejoins it.
 
-  home.packages = [
-    # Install nixgl for graphical apps installed with nix
-    nixgl.packages.${pkgs.system}.nixGLIntel
+  # Customize the shared Chromium installation rather than adding a second package.
+  # A bare WM has no secret-service keyring, Xvnc has no GLX, and the workspace's
+  # 64MB /dev/shm fills after a few tabs. The last flag moves those allocations to
+  # /tmp, avoiding the font-service "No space left on device" crash.
+  programs.chromium.commandLineArgs = [
+    "--password-store=basic"
+    "--disable-gpu"
+    "--disable-dev-shm-usage"
+  ];
 
-    # Install all packages
+  home.packages = [
+    nixgl.packages.${pkgs.system}.nixGLIntel # non-NixOS graphics compatibility
     pkgs.tigervnc # Xvnc + vncpasswd/vncconfig
-    pkgs.i3
-    pkgs.i3status
-    pkgs.dmenu
-    pkgs.xterm # see the terminal comment in the i3 config
-    pkgs.ghostty
-    pkgs.firefox
+    pkgs.i3 # window manager for the virtual session; NixOS supplies its own session
+    pkgs.xkbcomp # Xvnc invokes this to compile the keymap
     vnc-start
     vnc-stop
 
-    # X utilities worth having inside the session.
-    pkgs.xclip # clipboard from the shell
-    pkgs.xrandr # inspect/change the session resolution
-    pkgs.xdpyinfo # confirm the X server is actually up
-    pkgs.xkbcomp # Xvnc needs it for the keymap; also useful by hand
-
-    # Fonts. Without these, and without fontconfig below, every web page and UI label
-    # renders as tofu boxes: nix packages don't see Ubuntu's system font paths.
+    # Nix packages cannot see Ubuntu's system font paths. The shared desktop
+    # enables fontconfig; this add-on supplies the fallback fonts NixOS has natively.
     pkgs.dejavu_fonts
-    pkgs.liberation_ttf # metric-compatible Arial/Times/Courier substitutes for the web
+    pkgs.liberation_ttf
     pkgs.noto-fonts
     pkgs.noto-fonts-color-emoji
-    pkgs.nerd-fonts.hack # same font the mac's terminals use
   ];
-
-  # Generates ~/.config/fontconfig pointing at the nix profile's fonts. Required on a
-  # non-NixOS host, where nothing else tells nix-built apps where fonts live.
-  fonts.fontconfig.enable = true;
-
-  # liveLink, not a store copy, so the config is editable in place and `$mod+Shift+r`
-  # picks up edits without a home-manager switch.
-  home.file.".config/i3/config".source = liveLink "config/.config/i3/config";
 }

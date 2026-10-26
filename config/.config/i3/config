@@ -1,15 +1,13 @@
-# i3 config for the VNC session on the Ubuntu workspace (nix-config/modules/vnc.nix).
-# Linked live from the dotfiles, so edits here apply on the next `$mod+Shift+r` — no
-# home-manager switch needed.
+# Shared i3 config for the native Linux desktop and Ubuntu/VNC.
+# Linked live from the dotfiles: edit here, then Alt+Shift+r to restart i3.
+# Keep the Alt/Vim bindings aligned with the AeroSpace config.
 
 # Mod1 (Option/Alt), NOT Mod4. A VNC viewer on macOS maps Cmd to Super, but macOS grabs
 # most Cmd combos (Cmd+Tab, Cmd+Q, Cmd+W) before they ever reach the viewer, so a Mod4
 # setup loses half its bindings. Option passes through cleanly.
 set $mod Mod1
 
-# xterm, not alacritty/ghostty: both are GPU-accelerated and need a working GLX/EGL
-# stack. Nix-built GL apps on a non-NixOS host hit the classic libGL mismatch (the
-# nixGL problem), and this VM has no GPU anyway. xterm is pure X11 and just works.
+# xterm works on both native displays and Xvnc without GPU/GLX support.
 set $term xterm -fa "DejaVu Sans Mono" -fs 11
 
 font pango:DejaVu Sans Mono 10
