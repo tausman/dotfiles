@@ -5,7 +5,6 @@
   "packages": [
     "npm:context-mode",
     "npm:pi-subagents",
-    "npm:pi-mcp-adapter",
     "npm:pi-markdown-preview",
     "npm:pi-powerline-footer",
     "npm:@juicesharp/rpiv-ask-user-question",
@@ -21,8 +20,5 @@
   ],
   "lastChangelogVersion": "0.84.2",
   "theme": "light",
-  "hideThinkingBlock": true,
-  "extensions": [
-    "-builtin:mcp"
-  ]
+  "hideThinkingBlock": true
 }

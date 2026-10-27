@@ -17,9 +17,11 @@ with a separate `skills` entry for the shared Credential Management on-call skil
 | `.pi/agent/mcp.json` | `~/.pi/agent/mcp.json` | All MCP servers. |
 | `claude/.claude/CLAUDE.md` | `~/.pi/agent/AGENTS.md` | Global instructions, shared with Claude. Lives in `claude/`, not here. |
 
-All are `liveLink` symlinks (see `nix-config/profiles/base.nix`), so pi's own writes —
-`pi install`, `Ctrl+L` model picks, `/mcp`, theme changes — land back in this repo as git
-diffs.
+Home Manager deploys these as `liveLink` symlinks (see
+`nix-config/profiles/base.nix`), so writes through those links land back in this repo.
+Some tools replace a file rather than writing through its symlink: check `readlink -f`
+before assuming a live file matches the repo. In particular, this host's MCP config
+is currently a separate file with local overrides; preserve those before a rebuild.
 
 **Not tracked:** `~/.pi/agent/models.json` (generated per user by `/refresh-models`; it
 bakes in `dd.user_email` / `dd.team` headers) and `~/.pi/agent/auth.json`.
@@ -41,31 +43,53 @@ its resolved absolute path.
 
 ## MCP
 
-Every server is spelled out in `.pi/agent/mcp.json` in this repo. `pi-mcp-adapter` (pi has
-no built-in MCP client) merges several config layers, lowest precedence first:
+Pi 1.4 provides the MCP client. **`pi-mcp-adapter` is not installed**, and the built-in
+`mcp` extension remains enabled. Installing the adapter again causes a `/mcp` command
+collision and replaces native support.
 
-1. `~/.config/mcp/mcp.json` — **deliberately absent.** This was briefly symlinked to the
-   Claude plugin's `.mcp.json` to share one server list across both agents. Dropped: 3 of
-   the 7 servers need pi-specific values anyway (`atlassian` on `/authv2` with
-   `skipIssuerMetadataValidation`, `slack` on `oauth.redirectUri` where Claude uses
-   `oauth.callbackPort`, `trajectory` pointing at a different binary), so the shared layer
-   saved four duplicate entries at the cost of a second file and a precedence chain.
-2. `~/.agents/mcp.json`, `~/.agents/mcp/mcp.json` — unused.
-3. `~/.pi/agent/mcp.json` — **this repo, the only source.** All 7 servers.
-4. `<repo>/.mcp.json`, `<repo>/.pi/mcp.json` — project-level, highest precedence. A
-   repo-level `.mcp.json` can shadow the global config entirely; if MCP looks broken in a
-   given repo, launch pi from outside it.
+Native Pi reads:
 
-The trade-off: adding a server means editing here *and* the Claude plugin. Keeping the two
-in sync is manual and deliberate.
+1. `~/.pi/agent/mcp.json` — user-wide servers, declared in this repo.
+2. `<repo>/.pi/mcp.json` — trusted project overrides. A complete server entry replaces
+   the user-wide entry. An entry containing only `enabled`, `exposure`, or
+   `toolExposure` overrides those fields without replacing the connection.
 
-Server definitions are per-field merged across layers, but nested objects are replaced
-wholesale — an `oauth` override has to restate every key it needs.
+Native Pi does **not** import the adapter's shared `~/.config/mcp/mcp.json`,
+`~/.agents/mcp.json`, root `.mcp.json`, or Claude/Cursor configuration layers.
+The Claude plugin's server list remains separately maintained.
 
-**Do not run `pi-mcp-adapter init`.** It offers to add `imports: ["cursor", "claude-code",
-"claude-desktop"]`, which would pull servers out of `~/.claude.json`, `~/.cursor/mcp.json`,
-and the Claude Desktop config — duplicating these entries and resurrecting stale
-per-project ones.
+Most servers use `exposure: "deferred"`: native `tool_search` discovers tools without
+putting every schema in the prompt. Pi connects enabled servers at startup; the old
+adapter's `lifecycle` and `directTools` settings are not native controls.
+
+Migration details:
+
+- **Atlassian:** uses the [recommended v2 endpoint](https://support.atlassian.com/atlassian-ai-gateway/docs/get-started-with-the-atlassian-remote-mcp-server/).
+  The old `auth: "oauth"` and `skipIssuerMetadataValidation` adapter fields are removed;
+  native OAuth discovery keeps issuer validation enabled.
+- **Slack:** the registered callback is `http://localhost:3118/callback`, configured
+  with native `oauth.callbackUrl` (not the adapter's `redirectUri`).
+- **Datadog:** preserves this host's production and staging MCP endpoints. The
+  Datadog Pi plugin's `/datadog` sign-in is separate from native MCP sign-in.
+- **Orgstore:** the MCP process can start without a database, but SQL calls require
+  Postgres or its tunnel at `localhost:5435` for `aaa_authn`.
+- **Trajectory:** `trajectory-mcp.cjs` resolves the active installed extension bundle
+  from its manifest, with a fallback for older flat installations. No Mac username or
+  bundle hash is pinned in the shared config. The Trajectory extension must already
+  be installed; this launcher does not install it or change capture/telemetry settings.
+- **Google Workspace:** intentionally retains its existing `mcp-remote` configuration
+  and authentication. Its separate OAuth scope failure was not addressed by this migration.
+
+Native OAuth credentials live in `~/.pi/agent/mcp-auth.json`, outside this repo. They
+are separate from the adapter's credential store: migration requires fresh sign-ins,
+and does not copy or delete old credentials. Use `pi mcp login <server>` or
+`/mcp login <server>` for Atlassian, Slack, and each Datadog MCP connection.
+Over SSH, the native sign-in UI accepts the browser's redirected URL if its loopback
+callback cannot reach this machine.
+
+Run `pi mcp list --json` to validate configuration and connect enabled servers. This
+also attempts Google Workspace; a failure there does not mean the other servers failed.
+Restart Pi after removing the adapter; use `/reload` for subsequent server config changes.
 
 ## Global instructions
 
@@ -83,18 +107,18 @@ To replace pi's *system prompt* rather than append instructions, use
 
 ## Built-in tools
 
-pi enables **four** builtins by default — `read`, `bash`, `edit`, `write`. `grep`, `find`,
-and `ls` exist but are opt-in (`docs/quickstart.md`: "Additional built-in read-only tools
-… are available through tool options"). So the model reaches for `bash` + ripgrep instead;
-the nixpkgs derivation puts `rg` and `fd` on pi's PATH for exactly that reason.
+Pi enables **four** builtins by default — `read`, `bash`, `edit`, `write`. `grep`, `find`,
+and `ls` are opt-in. The nixpkgs derivation puts `rg` and `fd` on Pi's PATH, so shell
+searches work without enabling additional tools.
 
-There is **no `tools` key in settings.json** — the only ways to enable the other three are
-the `--tools`/`-t` CLI flag or per-agent `tools:` frontmatter in `pi-subagents`.
+Pi 1.4 supports additive `defaultTools` entries in settings, such as
+`["+grep", "+find", "+ls"]`, and additive CLI flags such as `--tools +grep`.
+Native MCP automatically enables `tool_search` for deferred servers and `codemode`
+for codemode servers.
 
-Do not wrap pi in a shell alias that passes `-t`. It is a strict allowlist over built-in
-*and* extension tools, so `pi -t read,bash,edit,write,grep,find,ls` yields exactly those
-seven and silently drops `mcp`, `subagent`, `web_search`, and everything else packages
-contribute. Verified.
+Avoid a shell alias with a plain-name `-t` allowlist: it can hide extension tools such
+as `subagent` and `web_search`. Native MCP tools have separate exposure/filtering rules;
+see Pi's installed `docs/cli.md` before restricting them.
 
 The `pi-tausman` agents leave `tools` unset on purpose. In `pi-subagents` an explicit list
 is a strict allowlist with no additive form, so naming `grep`/`find`/`ls` would cost the
@@ -206,4 +230,6 @@ If the directory already exists, inspect it and update it without overwriting lo
 work; older checkouts may still point to `DataDog/team-aaa-internal-tools` and lack the
 skill. No additional `pi install` is needed because `settings.json` registers its path.
 
-Authenticate MCP servers on first use inside pi: `/mcp`, select the server, `Ctrl+A`.
+Authenticate native MCP servers with `/mcp`, select the server and choose Sign in,
+or run `pi mcp login <server>` from a terminal. Google Workspace's `mcp-remote`
+authentication remains separate.

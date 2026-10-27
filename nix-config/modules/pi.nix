@@ -40,10 +40,9 @@
     force = true;
   };
 
-  # No ~/.config/mcp/mcp.json here on purpose. pi-mcp-adapter would read that path as its
-  # lowest-precedence layer, and it was briefly symlinked to the Claude plugin's .mcp.json
-  # to share one server list. Dropped: 3 of 7 servers need pi-specific values anyway
-  # (atlassian /authv2, slack redirectUri, trajectory's own binary), so the shared layer
-  # saved little and cost a second file to reason about plus a precedence chain. All servers
-  # are now spelled out in ~/.pi/agent/mcp.json above. See pi/README.md.
+  # Pi 1.4's built-in MCP client reads ~/.pi/agent/mcp.json and trusted project
+  # .pi/mcp.json overrides. No pi-mcp-adapter or shared ~/.config/mcp layer is needed.
+  # Native OAuth state stays outside this repo in ~/.pi/agent/mcp-auth.json.
+  # Trajectory's portable launcher lives at ~/dotfiles/pi/trajectory-mcp.cjs.
+  # See pi/README.md for migration details and machine-local config preservation.
 }
