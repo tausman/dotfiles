@@ -21,5 +21,8 @@
   ],
   "lastChangelogVersion": "0.84.2",
   "theme": "light",
-  "hideThinkingBlock": true
+  "hideThinkingBlock": true,
+  "extensions": [
+    "-builtin:mcp"
+  ]
 }
