@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   # Language toolchains used across editors/projects.
   home.packages = with pkgs; [
@@ -9,8 +9,11 @@
     clippy
     rustfmt
     rust-analyzer
-    # Build tool for compiling native nvim plugins (e.g. telescope-fzf-native).
+    # C/C++ builds, including native nvim plugins (e.g. telescope-fzf-native).
+    gnumake
     cmake
+    (lib.hiPrio gcc) # both compiler wrappers export cc/c++; resolve that collision
+    clang
     # go → gopls for mason.nvim. (nodejs — used by the JS/TS-based LSP servers — lives in
     # modules/nodejs.nix.)
     go

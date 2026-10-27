@@ -1,6 +1,6 @@
 # Personal NixOS machine. User packages and dotfiles are managed by Home Manager
 # through hosts/nixos-personal.nix; boot, hardware, and login sessions belong here.
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -37,6 +37,22 @@
       enable = true;
       # User-facing i3 utilities come from the shared Home Manager desktop profile.
       extraPackages = [ ];
+    };
+  };
+
+  # Reuse the macOS keymap verbatim, replacing only the platform input/output.
+  # This service handles the built-in keyboard only; external keyboards are untouched.
+  services.kmonad = {
+    enable = true;
+    keyboards.builtin = let
+      device = "/dev/input/by-path/platform-i8042-serio-0-event-kbd";
+    in {
+      inherit device;
+      defcfg.enable = false; # the shared file already contains its defcfg
+      config = lib.replaceStrings
+        [ "(iokit-name)" "(kext)" ]
+        [ "(device-file ${builtins.toJSON device})" ''(uinput-sink "kmonad-builtin")'' ]
+        (builtins.readFile ../../../kmonad/kmonad.kbd);
     };
   };
 

@@ -130,6 +130,65 @@ Home Manager/NixOS target once after this layout change, then restart i3.
 - `Alt+h/j/k/l`: Vim-style focus; add Shift to move a window.
 - `Alt+1..5`: workspaces; `Alt+Shift+r`: reload via i3 restart.
 
+### C/C++ build tools
+
+The shared Home Manager `modules/dev.nix` installs GNU Make (`make`), CMake, GCC
+(`gcc`/`g++`), and Clang (`clang`/`clang++`) on NixOS, Ubuntu, and macOS. There are no
+separate NixOS system-package declarations for them.
+
+Both compiler wrappers provide `cc`/`c++` with the same default package priority,
+which conflicts when Home Manager builds the user profile. A single `lib.hiPrio gcc`
+resolves those shared names in favor of GCC; it does not disable Clang. Use `clang`
+and `clang++` explicitly when a project needs them.
+
+Both compilers are optional alternatives, not a requirement to use together. For a
+project that should use Clang, select `CC=clang CXX=clang++` or set CMake's compiler
+options in a fresh build directory. Project-specific libraries still belong in that
+project's development environment rather than this general tool list.
+
+### KMonad — built-in keyboard
+
+The `personal` target enables NixOS's native KMonad service for
+`/dev/input/by-path/platform-i8042-serio-0-event-kbd` only. External keyboards are not
+remapped. No extra flake input, custom service, or membership in `input`/`uinput` for
+user `t` is needed; the NixOS module manages its own service permissions and device watcher.
+
+`kmonad/kmonad.kbd` remains the single source of mappings. The NixOS configuration
+replaces only its macOS input/output backends with Linux `device-file`/`uinput-sink`
+backends, preserving the layers, timings, modifier swaps, `fallthrough true`, and
+`allow-cmd false`. The macOS file and launchd setup are unchanged.
+
+Unlike the macOS live link, the Linux service uses a built snapshot. After editing the
+keymap, apply it with the usual command:
+
+```sh
+sudo nixos-rebuild switch --flake "$HOME/dotfiles/nix-config#personal"
+```
+
+The NixOS build runs `kmonad -d` against the generated file before installing it. For
+the first activation, keep an SSH session or an external keyboard available. Check:
+
+```sh
+systemctl status kmonad-builtin.path kmonad-builtin.service --no-pager
+sudo journalctl -u kmonad-builtin.service -b --no-pager -n 50
+```
+
+The path unit starts the service when the keyboard device exists. To temporarily turn
+off remapping, stop **both** the watcher and service; stopping only the service can
+cause the watcher to start it again:
+
+```sh
+sudo systemctl stop kmonad-builtin.path
+sudo systemctl stop kmonad-builtin.service
+# Re-enable after troubleshooting:
+sudo systemctl start kmonad-builtin.path
+```
+
+The shared mapping's `lp`/`mctl` actions are macOS Launchpad/Mission Control keys, not
+Linux desktop actions. Fn behavior also depends on whether the keyboard exposes it to
+Linux. Existing modifier remaps are preserved, with Meta meaning Super on Linux;
+verify those keys/layers on the actual machine rather than assuming macOS desktop behavior.
+
 ### A different NixOS machine
 
 **Do not apply `#personal` unchanged to another machine:** its hardware file contains
@@ -156,7 +215,8 @@ nix eval --raw --no-write-lock-file \
 
 Add `--offline` when the locked inputs are already cached. The check covers machine
 settings, integrated Home Manager, the common desktop app list and single i3 config,
-VNC-only compatibility flags, package/font ownership, and preservation of all existing
+VNC-only compatibility flags, package/font ownership, compiler availability/priority,
+the KMonad device/backends and service permissions, and preservation of all existing
 Darwin/Ubuntu target names. It also runs as a tiny native check on an ARM Mac:
 
 ```sh

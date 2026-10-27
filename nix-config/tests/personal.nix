@@ -12,6 +12,13 @@ let
     "ubuntu-x86_64-desktop-personal"
   ];
   desktopHomes = [ home ] ++ vncHomes;
+  keyboard = system.services.kmonad.keyboards.builtin;
+  keyboardInput = "(device-file ${builtins.toJSON keyboard.device})";
+  keyboardOutput = ''(uinput-sink "kmonad-builtin")'';
+  keyboardService = system.systemd.services.kmonad-builtin.serviceConfig;
+  sharedKeymap = builtins.readFile ../../kmonad/kmonad.kbd;
+  systemPackages = map lib.getName system.environment.systemPackages;
+  allHomes = [ home ] ++ map (entry: entry.config) (builtins.attrValues flake.homeConfigurations);
 
   tests = {
     architecture = system.nixpkgs.hostPlatform.system == "x86_64-linux";
@@ -92,6 +99,42 @@ let
       "ubuntu-x86_64-desktop-personal"
     ];
     existingDarwinTarget = builtins.attrNames flake.darwinConfigurations == [ "default" ];
+    sharedBuildTools = lib.all (name:
+      !(builtins.elem name systemPackages)
+      && lib.all (userHome:
+        builtins.length (builtins.filter (package: lib.getName package == name) userHome.home.packages) == 1
+      ) allHomes
+    ) [ "gnumake" "cmake" "gcc-wrapper" "clang-wrapper" ];
+    gccDefault = lib.all (userHome:
+      let
+        gcc = lib.findFirst (package: lib.getName package == "gcc-wrapper") null userHome.home.packages;
+        clang = lib.findFirst (package: lib.getName package == "clang-wrapper") null userHome.home.packages;
+      in gcc != null && clang != null
+        && (gcc.meta.priority or 5) < (clang.meta.priority or 5)
+    ) allHomes;
+    kmonadBuiltInOnly = system.services.kmonad.enable
+      && builtins.attrNames system.services.kmonad.keyboards == [ "builtin" ]
+      && keyboard.device == "/dev/input/by-path/platform-i8042-serio-0-event-kbd";
+    kmonadLinuxBackends = !keyboard.defcfg.enable
+      && lib.hasInfix keyboardInput keyboard.config
+      && lib.hasInfix keyboardOutput keyboard.config
+      && !(lib.hasInfix "(iokit-name)" keyboard.config)
+      && !(lib.hasInfix "(kext)" keyboard.config);
+    kmonadSharedMapping = lib.replaceStrings
+      [ keyboardInput keyboardOutput ] [ "(iokit-name)" "(kext)" ]
+      keyboard.config == sharedKeymap;
+    kmonadSafeConfig = lib.hasInfix "fallthrough true" keyboard.config
+      && lib.hasInfix "allow-cmd false" keyboard.config;
+    kmonadDeviceActivation = system.hardware.uinput.enable
+      && builtins.elem "uinput" system.boot.kernelModules
+      && system.systemd.paths.kmonad-builtin.pathConfig.PathExists == keyboard.device
+      && builtins.elem "paths.target" system.systemd.paths.kmonad-builtin.wantedBy;
+    kmonadServicePermissions = keyboard.enableHardening
+      && keyboardService.DynamicUser
+      && keyboardService.DevicePolicy == "closed"
+      && keyboardService.ProtectHome
+      && lib.all (group: builtins.elem group keyboardService.SupplementaryGroups) [ "input" "uinput" ]
+      && lib.all (group: !(builtins.elem group system.users.users.t.extraGroups)) [ "input" "uinput" ];
   };
   failed = builtins.filter (name: !tests.${name}) (builtins.attrNames tests);
 in
