@@ -13,10 +13,8 @@ let
   ];
   desktopHomes = [ home ] ++ vncHomes;
   keyboard = system.services.kmonad.keyboards.builtin;
-  keyboardInput = "(device-file ${builtins.toJSON keyboard.device})";
-  keyboardOutput = ''(uinput-sink "kmonad-builtin")'';
   keyboardService = system.systemd.services.kmonad-builtin.serviceConfig;
-  sharedKeymap = builtins.readFile ../../kmonad/kmonad.kbd;
+  thinkpadKeymap = builtins.readFile ../../kmonad/thinkpad.kbd;
   systemPackages = map lib.getName system.environment.systemPackages;
   allHomes = [ home ] ++ map (entry: entry.config) (builtins.attrValues flake.homeConfigurations);
 
@@ -115,16 +113,12 @@ let
     kmonadBuiltInOnly = system.services.kmonad.enable
       && builtins.attrNames system.services.kmonad.keyboards == [ "builtin" ]
       && keyboard.device == "/dev/input/by-path/platform-i8042-serio-0-event-kbd";
-    kmonadLinuxBackends = !keyboard.defcfg.enable
-      && lib.hasInfix keyboardInput keyboard.config
-      && lib.hasInfix keyboardOutput keyboard.config
+    kmonadLinuxBackends = keyboard.defcfg.enable
+      && !(lib.hasInfix "(defcfg" keyboard.config)
       && !(lib.hasInfix "(iokit-name)" keyboard.config)
       && !(lib.hasInfix "(kext)" keyboard.config);
-    kmonadSharedMapping = lib.replaceStrings
-      [ keyboardInput keyboardOutput ] [ "(iokit-name)" "(kext)" ]
-      keyboard.config == sharedKeymap;
-    kmonadSafeConfig = lib.hasInfix "fallthrough true" keyboard.config
-      && lib.hasInfix "allow-cmd false" keyboard.config;
+    kmonadThinkpadMapping = keyboard.config == thinkpadKeymap;
+    kmonadSafeConfig = keyboard.defcfg.fallthrough && !keyboard.defcfg.allowCommands;
     kmonadDeviceActivation = system.hardware.uinput.enable
       && builtins.elem "uinput" system.boot.kernelModules
       && system.systemd.paths.kmonad-builtin.pathConfig.PathExists == keyboard.device

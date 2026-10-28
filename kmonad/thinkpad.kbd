@@ -1,0 +1,97 @@
+;; ThinkPad T14 Gen 7, US layout. NixOS supplies the Linux defcfg block.
+;; The source is arranged by key code, not exact physical position. Fn/FnLock
+;; remain firmware-controlled; media keys and any other unlisted keys fall through.
+;; Unlike the MacBook map, physical Ctrl/Alt/Super/Shift and Enter stay native.
+
+(defsrc
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12  home end  ins  del
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft up
+  lctl lmet lalt              spc              ralt rctl pgup pgdn left down rght
+)
+
+;; First layer is the startup layer: home-row mods are enabled immediately.
+(deflayer homemod
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12  home end  ins  del
+  @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  esc  @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft up
+  lctl lmet lalt              spc              ralt rctl pgup pgdn left down rght
+)
+
+;; Native typing without home-row mods. Keep Caps -> Escape and the mode selector.
+(deflayer plain
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12  home end  ins  del
+  @grl 1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  esc  a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft up
+  lctl lmet lalt              spc              ralt rctl pgup pgdn left down rght
+)
+
+;; F/J holds implement Ctrl per key rather than holding Ctrl globally: P/N emit
+;; bare Up/Down (including repeats), while the other typing keys emit Ctrl chords.
+;; Physical Ctrl stays native, including real Ctrl+P/N in applications.
+;; C-* uses around-implicit, preserving other held modifiers such as Shift.
+(deflayer fmod
+  C-esc C-f1 C-f2 C-f3 C-f4 C-f5 C-f6 C-f7 C-f8 C-f9 C-f10 C-f11 C-f12 C-home C-end C-ins C-del
+  @grl C-1  C-2  C-3  C-4  C-5  C-6  C-7  C-8  C-9  C-0  C--  C-=  C-bspc
+  C-tab C-q C-w  C-e  C-r  C-t  C-y  C-u  C-i  C-o  up   C-[  C-]  C-\
+  esc  @fa  @fs  @fd  _    C-g  C-h  @fj  @fk  @fl  @f;  C-'  C-ret
+  lsft C-z  C-x  C-c  C-v  C-b  down C-m  C-,  C-.  C-/  rsft C-up
+  lctl lmet lalt              C-spc            ralt rctl C-pgup C-pgdn C-left C-down C-rght
+)
+
+(deflayer jmod
+  C-esc C-f1 C-f2 C-f3 C-f4 C-f5 C-f6 C-f7 C-f8 C-f9 C-f10 C-f11 C-f12 C-home C-end C-ins C-del
+  @grl C-1  C-2  C-3  C-4  C-5  C-6  C-7  C-8  C-9  C-0  C--  C-=  C-bspc
+  C-tab C-q C-w  C-e  C-r  C-t  C-y  C-u  C-i  C-o  up   C-[  C-]  C-\
+  esc  @ja  @js  C-d  C-f  C-g  C-h  _    @jk  @jl  @j;  C-'  C-ret
+  lsft C-z  C-x  C-c  C-v  C-b  down C-m  C-,  C-.  C-/  rsft C-up
+  lctl lmet lalt              C-spc            ralt rctl C-pgup C-pgdn C-left C-down C-rght
+)
+
+;; Hold grave + 1 for plain typing, grave + 2 for home-row mods; tap for `.
+(deflayer layers
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    @pln @hom _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _                 _                _    _    _    _    _    _    _
+)
+
+(defalias
+  ;; Same tap-hold timing and home-row modifiers as the MacBook map.
+  a   (tap-hold 200 a lmet)
+  s   (tap-hold 200 s lalt)
+  d   (tap-hold 200 d lsft)
+  f   (tap-hold 200 f (layer-toggle fmod))
+  j   (tap-hold 200 j (layer-toggle jmod))
+  k   (tap-hold 200 k rsft)
+  l   (tap-hold 200 l ralt)
+  ;   (tap-hold 200 ; rmet)
+
+  ;; Preserve the home-row modifier combinations while F is held.
+  fa  (tap-hold 200 C-a (around lctl lmet))
+  fs  (tap-hold 200 C-s (around lctl lalt))
+  fd  (tap-hold 200 C-d (around lctl lsft))
+  fj  (tap-hold 200 C-j (around lctl rctl))
+  fk  (tap-hold 200 C-k (around lctl rsft))
+  fl  (tap-hold 200 C-l (around lctl ralt))
+  f;  (tap-hold 200 C-; (around lctl rmet))
+
+  ;; Preserve the home-row modifier combinations while J is held.
+  ja  (tap-hold 200 C-a (around lctl lmet))
+  js  (tap-hold 200 C-s (around lctl lalt))
+  jk  (tap-hold 200 C-k (around lctl rsft))
+  jl  (tap-hold 200 C-l (around lctl ralt))
+  j;  (tap-hold 200 C-; (around lctl rmet))
+
+  grl (tap-hold-next-release 200 grv (layer-toggle layers))
+  pln (layer-switch plain)
+  hom (layer-switch homemod)
+)

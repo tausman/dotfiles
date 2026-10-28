@@ -153,10 +153,30 @@ The `personal` target enables NixOS's native KMonad service for
 remapped. No extra flake input, custom service, or membership in `input`/`uinput` for
 user `t` is needed; the NixOS module manages its own service permissions and device watcher.
 
-`kmonad/kmonad.kbd` remains the single source of mappings. The NixOS configuration
-replaces only its macOS input/output backends with Linux `device-file`/`uinput-sink`
-backends, preserving the layers, timings, modifier swaps, `fallthrough true`, and
-`allow-cmd false`. The macOS file and launchd setup are unchanged.
+The ThinkPad T14 Gen 7 uses **`kmonad/thinkpad.kbd`** (US layout), separate from the
+MacBook's `kmonad/kmonad.kbd`. NixOS generates its Linux `device-file`/`uinput-sink`
+backends with `fallthrough true` and `allow-cmd false`. The macOS file and launchd
+setup are unchanged.
+
+Home-row mods are **enabled at startup**, using the same 200 ms tap/hold timing as
+on the MacBook. Tap a home-row key to type its letter; hold it for:
+
+| Keys | Hold action |
+| --- | --- |
+| A / ; | Left / right Super (Windows) |
+| S / L | Left / right Alt |
+| D / K | Left / right Shift |
+| F / J | Ctrl-style layer: P = Up, N = Down; other typing keys = Ctrl+key |
+
+- **Caps Lock → Escape** in both typing modes.
+- Hold **F or J**, then hold **P/N** to repeat Up/Down. Physical Shift can be added
+  for selection. This does not emit Ctrl+Up/Down.
+- **Physical Ctrl remains native**, including real Ctrl+P/N for application shortcuts.
+- Physical Ctrl, Alt, Super, Shift, Enter, function keys, and navigation keys keep
+  their native behavior during normal typing. There are no MacBook modifier swaps,
+  Apple function-key actions, or thumb/Enter symbol-layer remaps.
+- Tap **grave/backtick** to type it; hold it and press **1** for plain typing (home-row
+  mods off), or **2** to restore home-row mods. Caps Lock remains Escape in plain mode.
 
 Unlike the macOS live link, the Linux service uses a built snapshot. After editing the
 keymap, apply it with the usual command:
@@ -184,10 +204,20 @@ sudo systemctl stop kmonad-builtin.service
 sudo systemctl start kmonad-builtin.path
 ```
 
-The shared mapping's `lp`/`mctl` actions are macOS Launchpad/Mission Control keys, not
-Linux desktop actions. Fn behavior also depends on whether the keyboard exposes it to
-Linux. Existing modifier remaps are preserved, with Meta meaning Super on Linux;
-verify those keys/layers on the actual machine rather than assuming macOS desktop behavior.
+Fn/FnLock and the top row's function/media selection remain controlled by the
+ThinkPad firmware. Unlisted keys pass through unchanged. The source lists Linux key
+codes, not physical positions, so no Fn key or MacBook-only keys are assumed. This
+expects the existing US XKB layout; an ISO/localized keyboard may need extra mappings.
+
+Verify the input path on the actual ThinkPad before first activation:
+
+```sh
+ls -l /dev/input/by-path/*-event-kbd
+```
+
+If its built-in keyboard uses a different path, update `keyboards.builtin.device`
+in `nixos/personal/configuration.nix`. Check typing, held/repeated F/J + P/N, physical
+Ctrl shortcuts, Caps Lock, mode switching, and Fn/media keys on the machine.
 
 ### A different NixOS machine
 
