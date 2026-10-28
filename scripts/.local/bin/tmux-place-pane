@@ -77,9 +77,12 @@ if [ "$POS" = "1" ]; then
     evict ":$win.1" "$name1"; placed=1         # pos 2 -> pos 1 (evict old pos 1)
   elif target_window_exists; then
     if [ "$count" -le 1 ]; then
-      # pos 2 is free, so nothing needs to leave the stage: insert TARGET to the LEFT
-      # of pos 1 (-b) and the old pos-1 pane simply demotes to pos 2.
-      tmux join-pane -h -b -s ":$TARGET" -t ":$win.1"
+      # pos 2 is free: join on the right, then swap TARGET into pos 1.
+      # join-pane -b puts TARGET on the left but still numbers it as pane 2,
+      # which swaps the labels and breaks later position-based toggles.
+      # Joining normally then swapping keeps pane indices in left-to-right order.
+      tmux join-pane -h -s ":$TARGET" -t ":$win.1"
+      tmux swap-pane -d -s ":$win.2" -t ":$win.1"
       [ -n "$name1" ] && tmux set-option -p -t ":$win.2" @pane_name "$name1" 2>/dev/null
     else
       # pos 2 is taken: insert right of pos 1, then evict pos 1. Order after the join is
