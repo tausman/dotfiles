@@ -1,62 +1,47 @@
 {
   "mcpServers": {
     "atlassian": {
-      "type": "http",
-      "url": "https://mcp.atlassian.com/v2/mcp",
+      "description": "Search and work with Jira issues and Confluence pages.",
       "exposure": "deferred",
-      "description": "Search and work with Jira issues and Confluence pages."
-    },
-    "slack": {
       "type": "http",
-      "url": "https://mcp.slack.com/mcp",
-      "oauth": {
-        "clientId": "1601185624273.8899143856786",
-        "callbackUrl": "http://localhost:3118/callback"
-      },
-      "exposure": "deferred",
-      "description": "Search Slack messages and channels."
-    },
-    "datadog-mcp": {
-      "type": "http",
-      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp",
-      "exposure": "deferred",
-      "description": "Query Datadog production observability data."
-    },
-    "datadog-staging-mcp": {
-      "type": "http",
-      "url": "https://mcp.datad0g.com/api/unstable/mcp-server/mcp",
-      "exposure": "deferred",
-      "description": "Query Datadog staging observability data."
+      "url": "https://mcp.atlassian.com/v2/mcp"
     },
     "datadog-google-workspace": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://google-workspace-mcp-server-834963730936.us-central1.run.app/mcp"
-      ],
-      "env": {}
+      "url": "https://google-workspace-mcp-server-834963730936.us-central1.run.app/mcp"
+    },
+    "datadog-mcp": {
+      "description": "Query Datadog production observability data.",
+      "exposure": "deferred",
+      "type": "http",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp"
+    },
+    "datadog-staging-mcp": {
+      "description": "Query Datadog staging observability data.",
+      "exposure": "deferred",
+      "type": "http",
+      "url": "https://mcp.datad0g.com/api/unstable/mcp-server/mcp"
     },
     "orgstore-local": {
-      "type": "stdio",
-      "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
         "postgresql://postgres:postgres@localhost:5435/aaa_authn"
       ],
+      "command": "npx",
+      "description": "Run read-only SQL against the local orgstore Postgres connection on port 5435.",
       "env": {},
       "exposure": "deferred",
-      "description": "Run read-only SQL against the local orgstore Postgres connection on port 5435."
+      "type": "stdio"
     },
-    "trajectory": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "~/dotfiles/pi/trajectory-mcp.cjs"
-      ],
+    "slack": {
+      "description": "Search Slack messages and channels.",
       "exposure": "deferred",
-      "description": "Inspect local Trajectory capture status and recorded sessions."
+      "oauth": {
+        "callbackUrl": "http://localhost:3118/callback",
+        "clientId": "1601185624273.8899143856786"
+      },
+      "type": "http",
+      "url": "https://mcp.slack.com/mcp"
     }
   }
 }
