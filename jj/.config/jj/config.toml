@@ -10,6 +10,8 @@ backend = "ssh"
 key = "~/.ssh/id_ed25519_ddog.pub"
 
 [signing.backends.ssh]
+# Sign with the per-machine key even when SSH-agent forwarding is unresponsive.
+program = "ssh-keygen-local"
 allowed-signers = "~/.ssh/allowed_signers"
 
 [git]

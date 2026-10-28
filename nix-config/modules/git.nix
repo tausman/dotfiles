@@ -8,6 +8,10 @@
   home.file.".gitconfig".source = liveLink "git/.gitconfig";
   home.file.".gitignore".source = liveLink "git/dot-gitignore";
 
+  # Git and jj share a signer that never contacts a forwarded agent.
+  home.file.".local/bin/ssh-keygen-local".source =
+    liveLink "scripts/.local/bin/ssh-keygen-local";
+
   # ~/.git-template/config is intentionally a REAL file (copied via activation), not a
   # symlink: `init.templateDir` makes git copy this into every new repo's .git/, and git
   # preserves symlinks when copying — so a symlink here would make each new repo's

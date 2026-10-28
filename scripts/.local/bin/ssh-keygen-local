@@ -1,0 +1,5 @@
+#!/bin/sh
+# Commit signing uses this machine's key, not the forwarded SSH agent. A stale
+# agent can accept a connection but never reply, preventing ssh-keygen's fallback.
+unset SSH_AUTH_SOCK
+exec ssh-keygen "$@"

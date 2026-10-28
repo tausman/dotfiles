@@ -61,6 +61,8 @@
 [gpg]
 	format = ssh
 [gpg "ssh"]
+	# Sign locally without changing agent forwarding for other SSH operations.
+	program = ssh-keygen-local
 	allowedSignersFile = ~/.ssh/allowed_signers
 [commit]
 	gpgsign = true
