@@ -53,12 +53,12 @@ gri() {
 }
 
 # Checkout commit with fzf selection
-gcc() {
-    local commit=$(git log --oneline --decorate | awk '{printf "%-10s %s\n", (NR==1 ? "HEAD" : "HEAD~"NR-1), $0}' | fzf | awk '{print $2}')
-    if [[ -n "$commit" ]]; then
-        git checkout "$commit"
-    fi
-}
+# gcc() {
+#     local commit=$(git log --oneline --decorate | awk '{printf "%-10s %s\n", (NR==1 ? "HEAD" : "HEAD~"NR-1), $0}' | fzf | awk '{print $2}')
+#     if [[ -n "$commit" ]]; then
+#         git checkout "$commit"
+#     fi
+# }
 
 # Checkout branch with fzf selection
 unalias gcb 2>/dev/null

@@ -21,7 +21,10 @@ require("lazy").setup("tausman.lazy", {
         path = "~/neovim_dev_plugins",
         patterns = {},
         fallback = false,
-    }
+    },
+    rocks = {
+        enabled = false,
+    },
 })
 
 -- TODO: Check these settings out...
