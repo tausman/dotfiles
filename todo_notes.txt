@@ -1,0 +1,5 @@
+TODO:
+- get rid of mason just install lsp via nix config
+- setup fzf-lua instead of telescope since it should be faster? what about fzf plugin
+- move the entire nvim config to nix?
+- refactor the nix config

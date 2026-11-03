@@ -19,6 +19,7 @@
     ripgrep
     fzf
     visidata
+    unzip
   ];
 
   # Terminal file manager (the `n` shell function in the dotfiles uses it). Plugins are

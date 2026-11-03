@@ -25,6 +25,10 @@
   # Published via _module.args so every module can take it as a plain argument
   # (`{ liveLink, ... }:`) without redefining it. The ~/dotfiles path is derived from
   # home.homeDirectory, which each host file sets.
-  _module.args.liveLink = path:
-    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/${path}";
+  # `profileName` - a variable that is used to use different configurations for zshrc files
+  _module.args = {
+    liveLink = path:
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/${path}";
+    profileName = "default";
+  };
 }

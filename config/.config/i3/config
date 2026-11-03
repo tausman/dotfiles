@@ -50,6 +50,9 @@ bindsym $mod+Shift+3 move container to workspace number 3
 bindsym $mod+Shift+4 move container to workspace number 4
 bindsym $mod+Shift+5 move container to workspace number 5
 
+# --- switch to last ---
+bindsym $mod+Tab workspace back_and_forth
+
 # --- i3 itself ---
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart

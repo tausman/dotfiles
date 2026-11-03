@@ -1,11 +1,14 @@
-{ pkgs, lib, liveLink, ... }:
+{ pkgs, lib, liveLink, profileName, ... }:
 {
   # oh-my-zsh comes from the nixpkgs package (not the dotfiles repo).
   home.packages = [ pkgs.oh-my-zsh ];
 
   # Config files: live out-of-store symlinks to ~/dotfiles (editable in place; edits and
   # tool-writes propagate straight back to the repo). See `liveLink` in profiles/base.nix.
-  home.file.".config/zsh/dotfiles.zshrc".source = liveLink "zshrc/.zshrc";
+  home.file.".config/zsh/dotfiles.zshrc".source =
+    if profileName == "personal"
+    then liveLink "zshrc/.zshrc_personal"
+    else liveLink "zshrc/.zshrc";
   home.file.".config/zsh/dotfiles.zshenv".source = liveLink "zshrc/.zshenv";
   home.file.".aliases.zsh".source = liveLink "zshrc/.aliases.zsh";
 
