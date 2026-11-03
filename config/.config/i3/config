@@ -71,3 +71,5 @@ bar {
     status_command i3status
     position top
 }
+
+exec_always xrdb -merge ~/.Xresources
