@@ -5,6 +5,9 @@
   home.file.".config/i3/toggle_theme.sh".source = liveLink "config/.config/i3/toggle_theme.sh";
   home.file.".Xresources".source = liveLink "config/.config/i3/.Xresources";
 
+  # i3 blocks config
+  home.file.".config/i3blocks/config".source = liveLink "config/.config/i3blocks/config";
+
   home.packages = with pkgs; [
     xdg-desktop-portal-gtk
   ];

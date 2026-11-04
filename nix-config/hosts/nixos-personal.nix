@@ -1,6 +1,6 @@
 { lib, ... }:
 {
-  imports = [ ../profiles/linux-desktop.nix ];
+  imports = [ ../profiles/linux-desktop.nix ../profiles/nixos-desktop.nix ];
 
   home.username = "t";
   home.homeDirectory = "/home/t";

@@ -1,0 +1,4 @@
+[volume]
+command=wpctl get-volume @DEFAULT_AUDIO_SINK@
+interval=once
+signal=10
