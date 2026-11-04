@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   # The same applications and config for native Linux and Ubuntu/VNC. The host
   # supplies the display session: NixOS's LightDM/i3 or the remote-desktop add-on.
@@ -6,7 +6,6 @@
 
   home.packages = with pkgs; [
     alacritty # the module above supplies settings/font, not the application
-    firefox
     ghostty
     xterm # default terminal in the shared i3 config
     dmenu
@@ -16,6 +15,7 @@
     xclip
     xrandr
     xdpyinfo
+    xsettingsd
     direnv # used by the shared zsh startup
   ];
 
@@ -25,4 +25,20 @@
   # Register the Hack Nerd Font from alacritty.nix. Native NixOS supplies fallback
   # fonts; the Ubuntu/VNC add-on supplies them for its non-NixOS environment.
   fonts.fontconfig.enable = true;
+
+  # Firefox config
+  programs.firefox = {
+    enable = true;
+    configPath = "${config.xdg.configHome}/mozilla/firefox";
+    profiles.default = {
+      isDefault = true;
+      settings = {
+        # Force Firefox to listen strictly to the system theme portals we built
+        "layout.css.prefers-color-scheme.content-override" = 3;
+
+        # Optional Quality-of-Life addition: ensure website appearance defaults to system
+        "browser.theme.content-theme" = 0;
+      };
+    };
+  };
 }

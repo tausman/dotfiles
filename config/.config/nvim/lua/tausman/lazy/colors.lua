@@ -80,6 +80,19 @@ local function macos_is_dark()
     return vim.v.shell_error == 0 and out:match("Dark") ~= nil
 end
 
+-- Check local Linux xsettingsd state
+local function linux_is_dark()
+    local xsettings_path = vim.fn.expand("~/.xsettingsd")
+    local file = io.open(xsettings_path, "r")
+    if not file then return false end -- Default/Fallback to false if file doesn't exist
+
+    local content = file:read("*a")
+    file:close()
+
+    -- "Net/ColorScheme 1" means the system prefers dark mode
+    return content:match("Net/ColorScheme%s+1") ~= nil
+end
+
 -- Applied once at startup (see the github-theme spec below) so a fresh nvim doesn't come up
 -- light on a dark terminal. Reading the appearance is macOS-only and deliberately not done
 -- over SSH: on a remote workspace nvim can't see the appearance of the terminal you're
@@ -87,6 +100,8 @@ end
 function ApplyThemeMode()
     if is_mac then
         dark_mode = macos_is_dark()
+    else
+        dark_mode = linux_is_dark()
     end
     ColorMyPencils(dark_mode and DARK_SCHEME or LIGHT_SCHEME)
 end

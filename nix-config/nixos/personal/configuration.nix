@@ -4,6 +4,12 @@
 {
   imports = [ ./hardware-configuration.nix ];
 
+  # Ensure the portal definitions and application links map correctly into system pathing
+  environment.pathsToLink = [
+    "/share/applications"
+    "/share/xdg-desktop-portal"
+  ];
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;

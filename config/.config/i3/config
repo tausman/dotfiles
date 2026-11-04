@@ -76,3 +76,9 @@ bar {
 }
 
 exec_always xrdb -merge ~/.Xresources
+
+# Start the X11 settings daemon silently
+exec --no-startup-id xsettingsd
+
+# Toggle system-wide color scheme
+bindsym Mod1+Shift+t exec --no-startup-id ~/.config/i3/toggle_theme.sh
