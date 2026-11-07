@@ -71,7 +71,7 @@ bindsym $mod+r mode "resize"
 floating_modifier $mod
 
 bar {
-    status_command i3blocks
+    status_command i3status
     position top
 }
 
