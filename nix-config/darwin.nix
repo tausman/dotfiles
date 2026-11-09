@@ -195,6 +195,7 @@
       "datadog/tap/ddtool"
       "datadog/tap/git-dd"
       "datadog/tap/rapid"
+      "datadog/tap/supportdog"
     ];
 
     onActivation = {
