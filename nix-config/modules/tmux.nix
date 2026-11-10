@@ -37,6 +37,7 @@
 
     extraConfig = ''
       source-file ~/.config/tmux/dotfiles.tmux.conf
+      set -gw copy-mode-line-numbers relative
     '';
   };
 }
