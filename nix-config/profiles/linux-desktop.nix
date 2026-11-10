@@ -41,4 +41,55 @@
       };
     };
   };
+
+  # zathura config
+  programs.zathura = {
+    enable = true;
+
+    options = {
+      # Typography & Layout Clutter Removal
+      pages-per-row = 1;
+      scroll-step = 50;
+      statusbar-h-padding = 0;
+      statusbar-v-padding = 0;
+      show-scrollbars = false;     # Removes distracting vertical/horizontal bars
+      save-position = true;        # Remembers exactly what page you left off on
+
+      selection-clipboard = "clipboard";
+
+
+      # ==========================================
+      # DEFAULT MODE (Light Config)
+      # ==========================================
+      default-bg = "#fdf6e3";
+      default-fg = "#000000";
+      statusbar-bg = "#c7c7c7";
+      statusbar-fg = "#000000";
+      inputbar-bg = "#fdf6e3";
+      inputbar-fg = "#0c24bf";
+
+      # Text canvas parameters when recolor is FALSE (Light Mode)
+      recolor = false; # Start in your light mode text layout
+
+      # ==========================================
+      # RECOLOR MODE (Dark High Contrast)
+      # ==========================================
+      notification-bg = "#000000";
+      notification-fg = "#26cd4d";
+      notification-error-bg = "#ff9492";
+      notification-error-fg = "#000000";
+
+      recolor-lightcolor = "#000000";
+      recolor-darkcolor = "#f0f3f6";
+    };
+
+    mappings = {
+      # Toggle recolor/dark mode with just 'r' instead of 'Ctrl+r'
+      "r" = "recolor";
+
+      # Quick intuitive zoom shortcuts using standard keyboard keys
+      "minus" = "zoom out";
+      "plus" = "zoom in";
+    };
+  };
 }
