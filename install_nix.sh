@@ -163,8 +163,10 @@ setup_auth() {
         fi
     }
     key_can_access() {  # key_can_access <keyfile> <owner/repo> — SSO-authorized + access?
-        run_timeout 20 ssh -F /dev/null -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            -i "$1" git@github.com "git-upload-pack '$2.git'" </dev/null >/dev/null 2>&1
+        # Keep stderr so a missing/migrated repo or network failure isn't mistaken for SSO.
+        key_access_error=$(run_timeout 20 ssh -F /dev/null -o BatchMode=yes \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            -i "$1" git@github.com "git-upload-pack '$2.git'" </dev/null 2>&1 >/dev/null)
     }
     ensure_sso() {  # ensure_sso <account> <keyfile> <org> <owner/repo>
         if key_can_access "$2" "$4"; then
@@ -172,15 +174,19 @@ setup_auth() {
             return 0
         fi
         if [ ! -t 0 ]; then
-            echo "  WARNING: $(basename "$2") can't reach $4 — authorize '$3' at" >&2
-            echo "           https://github.com/settings/keys (non-interactive; skipping)." >&2
+            echo "  WARNING: $(basename "$2") can't reach $4 (non-interactive; skipping)." >&2
+            echo "  ${key_access_error:-SSH probe failed without an error message.}" >&2
+            echo "  If the error requires SSO, authorize '$3' at https://github.com/settings/keys." >&2
             return 0
         fi
         echo
-        echo "  >>> SSO NEEDED for $1 <<<"
-        echo "  Key '$(basename "$2")' isn't authorized for the '$3' org yet."
-        echo "    1. Open   https://github.com/settings/keys"
-        echo "    2. Find   '$(hostname -s) $(basename "$2") (authentication)'"
+        echo "  >>> ACCESS CHECK FAILED for $1 <<<"
+        echo "  Key '$(basename "$2")' can't reach $4:"
+        echo "  ${key_access_error:-SSH probe failed without an error message.}"
+        echo "  This may be SSO, repository permissions, a moved repo, or a connection problem."
+        echo "  If the error requires SSO:"
+        echo "    1. Open   https://github.com/settings/keys (signed in as $1)"
+        echo "    2. Find   '$(hostname -s) $(basename "$2.pub") (authentication)'"
         echo "    3. Click  'Configure SSO' and authorize '$3'."
         while true; do
             read -r -p "  Press Enter to re-check (or 's' to skip): " ans || ans=s
@@ -189,7 +195,7 @@ setup_auth() {
                 echo "  Verified: $(basename "$2") can now reach $4."
                 return 0
             fi
-            echo "  Still no access — confirm you authorized '$3' for this exact key."
+            echo "  Still can't reach $4: ${key_access_error:-SSH probe failed without an error message.}"
         done
     }
     setup_account_key() {  # setup_account_key <account> <keyfile> <sign|nosign> <org> <owner/repo>
@@ -206,7 +212,7 @@ setup_auth() {
     }
 
     mkdir -p ~/.ssh
-    setup_account_key tausman           ~/.ssh/id_ed25519_tausman nosign DataDog        DataDog/team-aaa-internal-tools
+    setup_account_key tausman           ~/.ssh/id_ed25519_tausman nosign DataDog        DataDog/homebrew-tap
     setup_account_key tausif-rahman_ddog ~/.ssh/id_ed25519_ddog    sign   ddoghq-sandbox ddoghq-sandbox/datadog-pi-packages
 
     # Use ddog for all commit signing, independently of SSH authentication.

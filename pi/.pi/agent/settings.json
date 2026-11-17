@@ -20,5 +20,6 @@
   ],
   "lastChangelogVersion": "1.4.0",
   "theme": "light",
+  "tuiMode": "regular",
   "hideThinkingBlock": true
 }
