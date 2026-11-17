@@ -380,12 +380,9 @@ shell files before migrating if an install reports an unsupported package versio
 /opt/dogbrew/bin/dogbrew self update --no-modify-rc-files
 ```
 
-`darwin.nix` declares `dogbrew.packages`. `modules/dogbrew.nix` provides `dogbrew-sync`
-and runs it as the primary user during system activation. It simply runs
-`dogbrew install NAME` for each declared CLI, letting Dogbrew install, update or
-repair it using the latest allowed release. There is no inventory tracking, separate
-upgrade step or automatic uninstall. Rebuilds require Datadog network access for
-Dogbrew's release checks. Nix rollbacks do not roll back Dogbrew installations.
+Dogbrew packages are managed separately from system/Home Manager activation. Once
+Dogbrew exists, use the [standalone Dogbrew target](#dogbrew--macos-and-ubuntu) to
+install or update the tools declared in `dogbrew-packages.nix`.
 
 ### 9. Pre-tap the DataDog Homebrew tap
 
@@ -490,7 +487,7 @@ just approve and skip this step.
 
 Run **home-manager first** (deploys your user env, including `~/.config/kmonad.kbd` and
 `~/.config/aerospace/aerospace.toml`), **then darwin-rebuild** (system: Homebrew — which
-installs AeroSpace — Dogbrew CLIs, and the kmonad + Karabiner launchd daemons). Ordering it
+installs AeroSpace — and the kmonad + Karabiner launchd daemons). Ordering it
 this way means both configs already exist when the things that read them appear, so they
 come up cleanly.
 
@@ -515,10 +512,34 @@ After this, both launchd daemons are loaded and running — see **Verifying the 
 services** below. Key repeat and caps-lock→escape are handled by `darwin.nix` (no manual
 `krp` tuning — that's what `krp.txt` documented).
 
+## Dogbrew — macOS and Ubuntu
+
+Run this as your normal user on either machine, independently of any rebuild:
+
+```sh
+nix run ~/dotfiles/nix-config#dogbrew
+```
+
+Nix selects the native app for Apple Silicon macOS, ARM64 Linux, or x86-64 Linux.
+The app is a small shell script that calls `dogbrew install NAME` for every entry in
+`dogbrew-packages.nix`, using the existing `/opt/dogbrew/bin/dogbrew`. Nix does not
+install Dogbrew itself, and the command fails with bootstrap instructions if it is
+missing. Run it on each machine where you want the tools installed.
+
+Dogbrew selects the latest allowed release for that machine. Datadog network access
+and compatible releases are required; an installation failure stops the command and
+returns an error. There is no automatic uninstall, and Nix rollbacks do not roll back
+Dogbrew installations. Editing the package list takes effect on the next `nix run`;
+no Home Manager or Darwin switch is required.
+
+Neither configuration switch runs this app automatically. Existing externally
+managed update jobs (such as Jamf's daily job on the Mac) are unchanged. Home Manager
+still provides the guarded Dogbrew shell initialization on both platforms.
+
 ## Migrating an existing Mac from Homebrew to Dogbrew
 
 Remove each supported CLI from `homebrew.brews`/`homebrew.casks` and add its Dogbrew
-name to `dogbrew.packages` before rebuilding. Then migrate the old installation as
+name to `dogbrew-packages.nix` before rebuilding. Then migrate the old installation as
 your normal user; Dogbrew verifies the new installation before removing the Homebrew
 copy. Review the dry run first and restrict the migration to the packages you moved:
 
@@ -535,10 +556,10 @@ package is `workspaces`. Other migrated CLIs retain their names. Do not run migr
 on every rebuild. Keep Homebrew cleanup set to `none` and do not use `brew autoremove`
 or blanket uninstalls as part of this transition.
 
-`dd-gopls` intentionally stays on Homebrew: Dogbrew's migrator requires owner
-validation of IDE executable paths before migrating it. `latest-datacenter-config`
-is in the catalog but currently has no allowed darwin-arm64 release, so it also stays
-on Homebrew; never bypass Dogbrew's version policy to migrate it. The other retained
+`dd-gopls` is declared in Dogbrew; ensure IDE executable paths point to the Dogbrew
+installation rather than the old Homebrew copy. `latest-datacenter-config` is in the
+catalog but currently has no allowed darwin-arm64 release, so it stays on Homebrew;
+never bypass Dogbrew's version policy to migrate it. The other retained
 Datadog formulae are not in the Dogbrew catalog yet. Check `dogbrew search` and
 `dogbrew migrate --dry-run` when revisiting that list. A dry run only establishes
 migration eligibility, not that an allowed, compatible release can be installed.
@@ -695,8 +716,8 @@ via `modules/core.nix`'s `home.sessionPath`.
 - **"Permission denied (publickey)" on the tap clone** → wrong SSH account (step 6) or
   root known_hosts / `sudo` agent (step 9). Fastest: manual `brew tap` as your user.
 - **`ddtool` "No available formula"** → it is now Dogbrew-managed: `dogbrew install ddtool`.
-- **Dogbrew is missing during activation** → bootstrap it using step 8a, then rerun the switch.
-- **Dogbrew install/update fails offline** → connect Appgate and retry `dogbrew-sync`.
+- **Dogbrew is missing** → bootstrap it using step 8a, then rerun `nix run ~/dotfiles/nix-config#dogbrew`.
+- **Dogbrew install/update fails offline** → connect Appgate and retry `nix run ~/dotfiles/nix-config#dogbrew`.
 - **Workspaces daemon points at Homebrew after migration** → run
   `/opt/dogbrew/bin/workspaces daemon register` as your normal user.
 - **`ssh -T git@github.com` greets the wrong account** → `gh auth switch` doesn't affect
@@ -730,6 +751,10 @@ Homebrew/casks. It shares all the `modules/` tool leaves with the mac via
   plus the VNC remote desktop
 
 User is `bits`, home `/home/bits`.
+
+Internal CLIs use the same [standalone Dogbrew target](#dogbrew--macos-and-ubuntu)
+as macOS: `nix run ~/dotfiles/nix-config#dogbrew`. It expects Dogbrew to already
+exist at `/opt/dogbrew/bin/dogbrew`; it does not run during Home Manager activation.
 
 ### Remote desktop (VNC)
 

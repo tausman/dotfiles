@@ -1,5 +1,6 @@
 """Offline regression tests. Never invoke or modify the real Dogbrew prefix."""
 from pathlib import Path
+import os
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,7 @@ prefix=${0%/bin/dogbrew}
 case "$1" in
   install)
     echo "$2" >> "$prefix/calls"
+    printf '%s' "$PATH" > "$prefix/path"
     [[ ! -e "$prefix/fail-install" ]] || exit 24
     touch "$prefix/$2.installed"
     ;;
@@ -45,6 +47,19 @@ class SyncTests(unittest.TestCase):
         result = self.run_sync("workspaces")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Bootstrap", result.stderr)
+
+    def test_nonexecutable_bootstrap(self):
+        self.manager.chmod(0o644)
+        result = self.run_sync("workspaces")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Bootstrap", result.stderr)
+
+    def test_preserves_caller_path_after_dogbrew_bin(self):
+        self.assertEqual(self.run_sync("dd-gopls").returncode, 0)
+        self.assertEqual(
+            (self.prefix / "path").read_text(),
+            f"{self.prefix}/bin:{os.environ['PATH']}",
+        )
 
     def test_install_every_declared_package_on_every_run(self):
         for _ in range(2):

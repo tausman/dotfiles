@@ -22,6 +22,9 @@
 
   outputs = { self, nixpkgs, home-manager, nix-darwin, nixgl, ... }:
   let
+    forAllSystems = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
+    dogbrewPackages = import ./dogbrew-packages.nix;
+
     # Build a home-manager configuration for a given system + host entry module. Each
     # host file (./hosts/*.nix) sets its identity and imports a profile of shared
     # modules; mac additionally imports the GUI/kmonad modules. The target NAME below is
@@ -38,6 +41,27 @@
       extraSpecialArgs = { inherit nixgl; };
     };
   in {
+    # Standalone, user-invoked installs; independent of Darwin/Home Manager activation.
+    # Dogbrew itself must already exist at /opt/dogbrew/bin/dogbrew.
+    packages = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in {
+      dogbrew = pkgs.writeShellApplication {
+        name = "dogbrew-sync";
+        text = ''
+          exec ${pkgs.bash}/bin/bash ${./scripts/dogbrew-sync.sh} \
+            /opt/dogbrew ${pkgs.lib.escapeShellArgs dogbrewPackages}
+        '';
+      };
+    });
+
+    apps = forAllSystems (system: {
+      dogbrew = {
+        type = "app";
+        program = nixpkgs.lib.getExe self.packages.${system}.dogbrew;
+      };
+    });
+
     homeConfigurations = {
       # macOS laptop — kept as `default` so the existing flow/README are unchanged.
       default = mkHome "aarch64-darwin" ./hosts/mac.nix;
@@ -74,17 +98,16 @@
 
     # Evaluate the Linux system on any supported development host, without building
     # its Linux closure. The check itself is a tiny native derivation.
-    checks = nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ]
-      (system: {
-        personal = import ./tests/personal.nix {
-          pkgs = nixpkgs.legacyPackages.${system};
-          flake = self;
-        };
-        dogbrew = import ./tests/dogbrew.nix {
-          pkgs = nixpkgs.legacyPackages.${system};
-          flake = self;
-        };
-      });
+    checks = forAllSystems (system: {
+      personal = import ./tests/personal.nix {
+        pkgs = nixpkgs.legacyPackages.${system};
+        flake = self;
+      };
+      dogbrew = import ./tests/dogbrew.nix {
+        pkgs = nixpkgs.legacyPackages.${system};
+        flake = self;
+      };
+    });
 
     darwinConfigurations.default = nix-darwin.lib.darwinSystem {
       system = "aarch64-darwin";

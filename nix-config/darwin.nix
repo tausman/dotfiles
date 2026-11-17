@@ -1,8 +1,6 @@
 { pkgs, ... }:
 
 {
-  imports = [ ./modules/dogbrew.nix ];
-
   system.stateVersion = 5;
 
   system.primaryUser = "tausif.rahman";
@@ -118,28 +116,6 @@
     CustomUserPreferences.NSGlobalDomain."com.apple.scrollwheel.scaling" = 1.0;
   };
 
-  # Internal CLIs supported by Dogbrew. Each rebuild runs dogbrew install for
-  # these names, letting Dogbrew handle installation and updates.
-  dogbrew = {
-    enable = true;
-    packages = [
-      "atlas"
-      "bzl"
-      "dd-auth"
-      "ddcall"
-      "ddr"
-      "ddtool"
-      "devkube"
-      "git-dd"
-      "kubectl-template"
-      "latest-image"
-      "orgstore"
-      "rapid"
-      "supportdog"
-      "workspaces" # Homebrew's datadog-workspaces was renamed in Dogbrew.
-    ];
-  };
-
   homebrew = {
     enable = true;
 
@@ -206,9 +182,6 @@
       "claude"
       "gcloud-cli"
       "ghostty"
-      # Dogbrew's migrator deliberately excludes dd-gopls until its owner
-      # validates IDE executable paths. Keep it here rather than bypassing that.
-      "datadog/tap/dd-gopls"
     ];
 
     onActivation = {
