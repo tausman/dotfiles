@@ -4,6 +4,7 @@
   imports = [
     ../modules/core.nix
     ../modules/git.nix
+    ../modules/bazel.nix
     ../modules/zsh.nix
     ../modules/tmux.nix
     ../modules/neovim.nix

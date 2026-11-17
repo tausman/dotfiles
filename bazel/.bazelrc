@@ -1,0 +1,6 @@
+# Support ~/.git-template for normal Git use without applying it to Bazel's
+# dependency repositories. The template predefines origin for the tausman* fetch
+# rules, which otherwise makes Bazel's `git remote add origin` fail with
+# "remote origin already exists". An empty value disables templates only for
+# repository rules; existing repositories' fetch settings are unchanged.
+common --repo_env=GIT_TEMPLATE_DIR=
