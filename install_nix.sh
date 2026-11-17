@@ -22,7 +22,7 @@
 # Usage:
 #   ./install_nix.sh          full setup (everything except auth)
 #   ./install_nix.sh fast     full setup minus the heavy web-ui + dogweb steps
-#   ./install_nix.sh nix      install Nix + apply home-manager (all packages + dotfiles)
+#   ./install_nix.sh nix      install Nix + apply home-manager + install/update Dogbrew tools
 #   ./install_nix.sh auth     GitHub auth only (both accounts, keys, signing, SSO)
 set -euo pipefail
 
@@ -459,9 +459,9 @@ setup_dogweb() {
 usage() {
     cat >&2 <<EOF
 Usage: $0 [command]
-  (none)   full setup: nix + home-manager + ssh + repos + claude + pi + web-ui + dogweb
+  (none)   full setup: nix + home-manager + dogbrew + ssh + repos + claude + pi + web-ui + dogweb
   fast     full setup minus the heavy web-ui + dogweb steps
-  nix      install Nix + apply home-manager (all packages + dotfiles), then stop
+  nix      install Nix + apply home-manager + install/update Dogbrew tools, then stop
   auth     GitHub auth only (both accounts, per-account SSH keys, signing, SSO)
 EOF
     exit 1
@@ -489,7 +489,8 @@ main() {
             ensure_nix
             require_daemon
             apply_home_manager
-            echo "Nix installed and home-manager applied (all packages + dotfiles)."
+            nix "${NIX_FLAGS[@]}" run "$FLAKE_DIR#dogbrew"
+            echo "Nix installed, home-manager applied, and Dogbrew tools installed/updated."
             return 0
             ;;
     esac
@@ -498,6 +499,7 @@ main() {
     ensure_nix
     require_daemon
     apply_home_manager
+    nix "${NIX_FLAGS[@]}" run "$FLAKE_DIR#dogbrew"
     ensure_ssh_custom_include        # nix links ~/.ssh/custom/*; this makes ssh load it
     mkdir -p "$HOME/vaults/work"     # obsidian vault dir (was in install.sh setup_base)
     colocate_dotfiles
