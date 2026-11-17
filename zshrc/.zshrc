@@ -72,6 +72,8 @@ ZSH_THEME="robbyrussell"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git vi-mode jj)
 
+# Before Oh My Zsh's compinit, including on non-Home-Manager (stow) machines.
+[ -f "/opt/dogbrew/share/etc/dogbrew/init.zsh" ] && . "/opt/dogbrew/share/etc/dogbrew/init.zsh"
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -222,14 +224,8 @@ fi
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
 # BEGIN ANSIBLE MANAGED BLOCK
-# Load homebrew shell variables (Darwin only — nix Linux boxes have no brew)
-[[ "$(uname)" == "Darwin" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# Force certain more-secure behaviours from homebrew
-export HOMEBREW_NO_INSECURE_REDIRECT=1
-export HOMEBREW_CASK_OPTS=--require-sha
-export HOMEBREW_DIR=/opt/homebrew
-export HOMEBREW_BIN=/opt/homebrew/bin
+# Homebrew environment/security settings are already loaded by .zshenv.
+# Do not run brew shellenv again here: it would shadow Dogbrew's shims.
 
 # Load python shims. --no-rehash skips the shim-directory rescan that
 # pyenv otherwise runs on every shell startup (a noticeable per-shell
@@ -286,3 +282,7 @@ export GONOSUMDB=github.com/DataDog,go.ddbuild.io
 export GOPRIVATE=
 export GOPROXY="https://depot-read-api-go.us1.ddbuild.io/magicmirror/magicmirror/@current/|https://depot-read-api-go.us1.ddbuild.io/magicmirror/magicmirror/@current/|https://depot-read-api-go.us1.ddbuild.io/magicmirror/testing/@current/"
 # END ANSIBLE MANAGED BLOCK
+
+# Version managers and devtools above prepend PATH entries. Reassert Dogbrew's
+# shim precedence after them; this hook deduplicates its own paths.
+[ -f "/opt/dogbrew/share/etc/dogbrew/init.zsh" ] && . "/opt/dogbrew/share/etc/dogbrew/init.zsh"

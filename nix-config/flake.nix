@@ -80,6 +80,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
           flake = self;
         };
+        dogbrew = import ./tests/dogbrew.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          flake = self;
+        };
       });
 
     darwinConfigurations.default = nix-darwin.lib.darwinSystem {

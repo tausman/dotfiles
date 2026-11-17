@@ -1,4 +1,11 @@
 { pkgs, lib, liveLink, profileName, ... }:
+let
+  # Static vendor hook: no Dogbrew process or network request at shell startup.
+  # Keep the canonical line in the generated files so Dogbrew recognizes setup.
+  dogbrewInit = ''
+    [ -f "/opt/dogbrew/share/etc/dogbrew/init.zsh" ] && . "/opt/dogbrew/share/etc/dogbrew/init.zsh"
+  '';
+in
 {
   # oh-my-zsh comes from the nixpkgs package (not the dotfiles repo).
   home.packages = [ pkgs.oh-my-zsh ];
@@ -18,20 +25,22 @@
   programs.zsh = {
     enable = true;
 
-    # Put Homebrew's shellenv on the login shell — but only on Darwin: /opt/homebrew
-    # doesn't exist on the headless Linux VM, so this is empty there. isDarwin keys off
-    # the platform (the honest axis for "is brew here"), independent of host/profile.
+    # macOS path_helper runs after .zshenv, so restore package-manager ordering in
+    # login shells. Dogbrew also exists on Linux workspaces; its hook is guarded.
     profileExtra = lib.optionalString pkgs.stdenv.isDarwin ''
-      eval "$(/opt/homebrew/bin/brew shellenv zsh)"
-    '';
+      if [[ -x /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv zsh)"
+      fi
+    '' + dogbrewInit;
 
     envExtra = ''
       source ~/.config/zsh/dotfiles.zshenv
     '';
 
-    # initContent replaces the deprecated initExtra (default order matches the old
-    # after-compinit placement, so behavior is unchanged).
-    initContent = ''
+    initContent = lib.mkMerge [
+      # Before Home Manager's compinit (order 570), including non-login shells.
+      (lib.mkOrder 550 dogbrewInit)
+      (lib.mkOrder 1000 ''
       source ~/.config/zsh/dotfiles.zshrc
 
       # tmux stores its socket under $TMUX_TMPDIR. Some hosts (workspace containers with no
@@ -42,6 +51,7 @@
       if [ -n "''${TMUX_TMPDIR:-}" ] && [ ! -w "$TMUX_TMPDIR" ]; then
         export TMUX_TMPDIR=/tmp
       fi
-    '';
+      '')
+    ];
   };
 }

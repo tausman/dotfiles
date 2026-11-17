@@ -366,10 +366,31 @@ nix-darwin *manages* Homebrew packages/taps but does **not** install Homebrew it
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
+### 8a. Bootstrap Dogbrew
+
+Dogbrew manages the supported internal Datadog CLIs; Homebrew still supplies external
+packages/apps and internal tools not yet migrated. Follow the
+[Dogbrew User Guide](https://datadoghq.atlassian.net/wiki/spaces/SDA/pages/6562316503/Dogbrew+User+Guide)
+if `/opt/dogbrew/bin/dogbrew` is missing (requires Appgate and, on macOS, admin access).
+Do not install a second copy of Dogbrew through Homebrew. Existing installations must
+support package format v2 (Dogbrew v1.10.1 works); update without rewriting Nix-owned
+shell files before migrating if an install reports an unsupported package version:
+
+```sh
+/opt/dogbrew/bin/dogbrew self update --no-modify-rc-files
+```
+
+`darwin.nix` declares `dogbrew.packages`. `modules/dogbrew.nix` provides `dogbrew-sync`
+and runs it as the primary user during system activation. It simply runs
+`dogbrew install NAME` for each declared CLI, letting Dogbrew install, update or
+repair it using the latest allowed release. There is no inventory tracking, separate
+upgrade step or automatic uninstall. Rebuilds require Datadog network access for
+Dogbrew's release checks. Nix rollbacks do not roll back Dogbrew installations.
+
 ### 9. Pre-tap the DataDog Homebrew tap
 
-The tap is declared in `darwin.nix` (`ddtool` is a **cask**, not a formula). The Part 2
-darwin switch would clone it, but doing that under `sudo` tends to fail with "Permission
+The tap is still declared in `darwin.nix` for the internal tools not yet migrated to
+Dogbrew. The Part 2 darwin switch would clone it, but doing that under `sudo` tends to fail with "Permission
 denied (publickey)" for two reasons — so tap it manually now as your **normal user**:
 
 ```sh
@@ -469,7 +490,7 @@ just approve and skip this step.
 
 Run **home-manager first** (deploys your user env, including `~/.config/kmonad.kbd` and
 `~/.config/aerospace/aerospace.toml`), **then darwin-rebuild** (system: Homebrew — which
-is what installs AeroSpace — plus the kmonad + Karabiner launchd daemons). Ordering it
+installs AeroSpace — Dogbrew CLIs, and the kmonad + Karabiner launchd daemons). Ordering it
 this way means both configs already exist when the things that read them appear, so they
 come up cleanly.
 
@@ -493,6 +514,50 @@ sudo --preserve-env=SSH_AUTH_SOCK darwin-rebuild switch --flake /Users/tausif.ra
 After this, both launchd daemons are loaded and running — see **Verifying the kmonad
 services** below. Key repeat and caps-lock→escape are handled by `darwin.nix` (no manual
 `krp` tuning — that's what `krp.txt` documented).
+
+## Migrating an existing Mac from Homebrew to Dogbrew
+
+Remove each supported CLI from `homebrew.brews`/`homebrew.casks` and add its Dogbrew
+name to `dogbrew.packages` before rebuilding. Then migrate the old installation as
+your normal user; Dogbrew verifies the new installation before removing the Homebrew
+copy. Review the dry run first and restrict the migration to the packages you moved:
+
+```sh
+/opt/dogbrew/bin/dogbrew migrate datadog-workspaces --dry-run
+/opt/dogbrew/bin/dogbrew migrate datadog-workspaces
+# Homebrew's uninstall hook unregisters the Workspaces daemon; restore it:
+/opt/dogbrew/bin/workspaces daemon register
+rehash
+```
+
+The migration argument is the **Homebrew** name `datadog-workspaces`, while the new
+package is `workspaces`. Other migrated CLIs retain their names. Do not run migration
+on every rebuild. Keep Homebrew cleanup set to `none` and do not use `brew autoremove`
+or blanket uninstalls as part of this transition.
+
+`dd-gopls` intentionally stays on Homebrew: Dogbrew's migrator requires owner
+validation of IDE executable paths before migrating it. `latest-datacenter-config`
+is in the catalog but currently has no allowed darwin-arm64 release, so it also stays
+on Homebrew; never bypass Dogbrew's version policy to migrate it. The other retained
+Datadog formulae are not in the Dogbrew catalog yet. Check `dogbrew search` and
+`dogbrew migrate --dry-run` when revisiting that list. A dry run only establishes
+migration eligibility, not that an allowed, compatible release can be installed.
+
+After migration and the two switches, open a new shell and verify:
+
+```sh
+dogbrew list
+dogbrew doctor
+command -v workspaces             # /opt/dogbrew/bin/workspaces
+command -v brew                   # /opt/dogbrew/shims/bin/brew (forwards to Homebrew)
+launchctl print gui/$(id -u)/dog.infra.workspace.daemon
+```
+
+Regression checks (mock Dogbrew only; no real package changes):
+
+```sh
+nix build ./nix-config#checks.aarch64-darwin.dogbrew --no-link
+```
 
 ## Part 3 — Cleanup
 
@@ -603,9 +668,17 @@ home-manager **owns** `~/.zshenv`, `~/.zprofile`, `~/.zshrc` — generated symli
 the read-only nix store. Edit the repo files instead:
 
 - `modules/zsh.nix` `programs.zsh.envExtra`  → sources `~/.config/zsh/dotfiles.zshenv`
-- `modules/zsh.nix` `programs.zsh.initExtra` → sources `~/.config/zsh/dotfiles.zshrc`
-- `modules/zsh.nix` `programs.zsh.profileExtra` → `eval "$(/opt/homebrew/bin/brew shellenv zsh)"`,
-  guarded on `pkgs.stdenv.isDarwin` (empty on the Linux VM)
+- `modules/zsh.nix` `programs.zsh.initContent` → Dogbrew setup before `compinit`, then
+  sources `~/.config/zsh/dotfiles.zshrc`
+- `modules/zsh.nix` `programs.zsh.profileExtra` → Homebrew's `shellenv` on Darwin,
+  followed by Dogbrew's static `init.zsh` hook (also supported on Linux workspaces)
+- `zshrc/.zshenv` → package-manager setup for non-interactive shells too;
+  `zshrc/.zshrc` reasserts Dogbrew shim precedence after other PATH modifications
+
+These hooks source `/opt/dogbrew/share/etc/dogbrew/init.zsh` only when it exists.
+Do not source the legacy `~/.config/dogbrew/env` or add a late `brew shellenv` that
+shadows the shims. Nix owns the startup files; if repairing Dogbrew itself, use
+`dogbrew self setup --no-modify-rc-files` rather than rewriting those files.
 
 Edit `zshrc/.zshrc` / `zshrc/.zshenv`, then `home-manager switch`. Oh My Zsh works because
 `modules/zsh.nix` installs it and links `~/.oh-my-zsh` to `$ZSH`. `~/.local/bin` is on PATH
@@ -621,7 +694,11 @@ via `modules/core.nix`'s `home.sessionPath`.
   `clone_target` SSH URL is set in `darwin.nix` (it is). Pre-tap manually (step 9).
 - **"Permission denied (publickey)" on the tap clone** → wrong SSH account (step 6) or
   root known_hosts / `sudo` agent (step 9). Fastest: manual `brew tap` as your user.
-- **`ddtool` "No available formula"** → it's a **cask**, keep it under `casks`.
+- **`ddtool` "No available formula"** → it is now Dogbrew-managed: `dogbrew install ddtool`.
+- **Dogbrew is missing during activation** → bootstrap it using step 8a, then rerun the switch.
+- **Dogbrew install/update fails offline** → connect Appgate and retry `dogbrew-sync`.
+- **Workspaces daemon points at Homebrew after migration** → run
+  `/opt/dogbrew/bin/workspaces daemon register` as your normal user.
 - **`ssh -T git@github.com` greets the wrong account** → `gh auth switch` doesn't affect
   SSH; fix the key the agent offers (step 6).
 - **`git clone`/`git init` "could not lock config file .git/config"** → a read-only
